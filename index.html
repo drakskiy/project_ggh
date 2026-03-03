@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GGH Locations</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #map { height: 100%; width: 100%; }
+
+    .panel {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.95);
+      padding: 10px 12px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      max-width: 360px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .panel h1 { font-size: 14px; margin: 0 0 6px 0; }
+    .panel p { font-size: 12px; margin: 0; color: #333; line-height: 1.35; }
+
+    .search {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    input[type="search"] {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      font-size: 12px;
+      outline: none;
+    }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      background: #f2f2f2;
+    }
+    .count { margin-top: 6px; font-size: 11px; color: #667; }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <div class="panel">
+    <h1>GGH Locations</h1>
+    <p>Click on pins for more details.</p>
+
+    <div class="search">
+      <input id="search" type="search" placeholder="Search by location name" />
+      <button id="resetBtn">Reset</button>
+    </div>
+
+    <div style="margin-top:10px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <div style="font-size:12px; color:#333;">
+          Day: <span id="dayLabel">1</span>
+          <span style="color:#667;">(</span><span id="dateLabel">Jan 1</span><span style="color:#666;">)</span>
+        </div>
+        <button id="todayBtn" style="padding:6px 10px;">Today</button>
+      </div>
+      <input
+        id="daySlider"
+        type="range"
+        min="1"
+        max="365"
+        step="1"
+        value="1"
+        style="width:100%; margin-top:6px;"
+      />
+    </div>
+    <div class="count" id="countLine"></div>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script>
+    /* ============================================================
+       Section 1 — PINS LIST
+       Format: { name: string, lat: number, lng: number, notes: string }
+       ============================================================ */
+       const PINS = [
+        { name: "Grizzly Peak (KPFA Tower pullout)", lat: 37.865212, lng: -122.222031, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Grizzly Peak (main pullout)", lat: 37.880425, lng: -122.230213, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Grizzly Peak (giant log pullout)", lat: 37.87220739, lng: -122.2205883, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Big C", lat: 37.874522, lng: -122.249583, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Berkeley Bay Vista", lat: 37.88042625, lng: -122.2476265, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Lawrence Hall of Science", lat: 37.878412, lng: -122.247044, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Albany Bulb", lat: 37.889647, lng: -122.32617, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Brickyard Cove", lat: 37.859649, lng: -122.305769, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Seaview Trail Vista", lat: 37.894071, lng: -122.234374, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Stonewall-Panoramic Trail Vista", lat: 37.865556, lng: -122.240573, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Cesar Chavez Park (north end)", lat: 37.87436317, lng: -122.3246235, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Cesar Chavez Park (south end)", lat: 37.869535, lng: -122.320194, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Point Emery", lat: 37.84572935, lng: -122.302198, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Emeryville Marina Park", lat: 37.8424286, lng: -122.3143674, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Bayview Pl", lat: 37.884162, lng: -122.263285, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Atlas Path Vista", lat: 37.88684051, lng: -122.2504151, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Grotto Rock Park", lat: 37.89342716, lng: -122.2687722, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Indian Rock Park", lat: 37.89221863, lng: -122.273079, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Joaquin Miller Park (Lookout Point)", lat: 37.81277606, lng: -122.1939463, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Picnic View Ridge", lat: 37.871524, lng: -122.229754, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Mt Diablo Summit Visitor Center", lat: 37.88180426, lng: -121.91429, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Barker Beach Alcatraz", lat: 37.826713, lng: -122.424502, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Treasure Island NW", lat: 37.826852, lng: -122.379041, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
+        { name: "Clark Kerr Track", lat: 37.864703, lng: -122.246562, gghStartDay: 1, gghEndDay: 31, tag: "On-Campus", notes: "" },
+        { name: "Evans Hall F10 Balcony", lat: 37.87343369, lng: -122.2580008, gghStartDay: 1, gghEndDay: 31, tag: "On-Campus", notes: "" },
+        { name: "Graduate Theological Union Balcony", lat: 37.87541526, lng: -122.2620499, gghStartDay: 1, gghEndDay: 31, tag: "On-Campus", notes: "" },
+        { name: "Ridge Path", lat: 37.8764492, lng: -122.2639368, gghStartDay: 1, gghEndDay: 31, tag: "On-Campus", notes: "" },
+        { name: "Cal Memorial Stadium Concourse", lat: 37.87043189, lng: -122.2515015, gghStartDay: 1, gghEndDay: 31, tag: "On-Campus", notes: "" },
+        { name: "Top of Campanile", lat: 37.87205781, lng: -122.2578749, gghStartDay: 1, gghEndDay: 31, tag: "On-Campus", notes: "" },
+        { name: "I-House Tower", lat: 37.86974275, lng: -122.2515375, gghStartDay: 1, gghEndDay: 31, tag: "On-Campus", notes: "" }
+      ];
+
+    /* ============================================================
+       Section 2 — MAP SETTINGS
+       ============================================================ */
+      const MAP_CENTER = { lat: 37.8715, lng: -122.2730 }; // University Ave and MLK
+      const START_ZOOM = 12;
+      const MIN_ZOOM = 11;
+
+    /* ============================================================
+       Section 3 — MAP INIT
+       ============================================================ */
+      const map = L.map("map", { zoomControl: true, minZoom: MIN_ZOOM })
+        .setView([MAP_CENTER.lat, MAP_CENTER.lng], START_ZOOM);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+    /* ============================================================
+       Section 4 — MARKERS RENDERING
+       ============================================================ */
+       const redIcon = new L.Icon({
+        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
+      const blueIcon = new L.Icon({
+        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
+      const markers = []; // { marker, pin, searchableText }
+
+      function formatDay(day, year = SLIDER_YEAR) {
+        const d = new Date(year, 0);
+        d.setDate(day);
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const date  = String(d.getDate()).padStart(2, "0");
+        return `${month}/${date}`;
+      }
+      
+      function pinPopupHtml(pin) {
+        const nm = escapeHtml(pin.name);
+        const nts = escapeHtml(pin.notes || "").replace(/\n/g, "<br/>");
+        const lat = Number(pin.lat);
+        const lng = Number(pin.lng);
+        const gghLine = `${formatDay(pin.gghStartDay)}–${formatDay(pin.gghEndDay)}`;
+
+        return `
+          <div style="min-width: 240px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;">
+            <div style="font-weight:700; margin-bottom:7px;">${nm}</div>
+
+            <div style="font-size:11px; color:#555; margin-bottom:6px;">
+              <strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}
+            </div>
+
+            <div style="font-size:11px; color:#555; margin-bottom:6px;">
+              <strong>GGH Dates:</strong> ${gghLine}
+            </div>
+
+            <div style="font-size:11px; color:#555; margin-bottom:6px;">
+              <strong>Tags:</strong> ${pin.tag}
+            </div>
+
+            <div style="font-size:12px; color:#333; line-height:1.35;">
+              ${nts || ""}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderPins(pinList) {
+        // remove old markers
+        for (const m of markers) map.removeLayer(m.marker);
+        markers.length = 0;
+
+        for (const pin of pinList) {
+          if (!isFinite(pin.lat) || !isFinite(pin.lng)) continue;
+          const icon = pin.tag === "On-Campus" ? blueIcon : redIcon;
+          const marker = L.marker([pin.lat, pin.lng], { icon }).addTo(map);
+          marker.bindPopup(pinPopupHtml(pin));
+          markers.push({
+            marker,
+            pin,
+            searchableText: `${pin.name || ""} ${pin.notes || ""}`.toLowerCase()
+          });
+        }
+
+        updateCountLine(pinList.length);
+      }
+
+      function fitToAllPins(pinList) {
+        const latlngs = pinList
+          .filter(p => isFinite(p.lat) && isFinite(p.lng))
+          .map(p => [p.lat, p.lng]);
+
+        if (latlngs.length === 0) return;
+        if (latlngs.length === 1) {
+          map.setView(latlngs[0], 15);
+        } else {
+          map.fitBounds(latlngs, { padding: [40, 40] });
+        }
+      }
+
+    /* ============================================================
+       Section 5 — SEARCH UI
+       ============================================================ */
+      const searchInput = document.getElementById("search");
+      const resetBtn = document.getElementById("resetBtn");
+      const countLine = document.getElementById("countLine");
+
+      function updateCountLine(nShown) {
+        countLine.textContent = `Showing ${nShown} pin${nShown === 1 ? "" : "s"} (of ${PINS.length})`;
+      }
+
+      function applySearch(q) {
+        const query = q.trim().toLowerCase();
+        let shown = 0;
+
+        for (const m of markers) {
+          const match = query === "" || m.searchableText.includes(query);
+          if (match) {
+            if (!map.hasLayer(m.marker)) m.marker.addTo(map);
+            shown++;
+          } else {
+            if (map.hasLayer(m.marker)) map.removeLayer(m.marker);
+          }
+        }
+
+        updateCountLine(shown);
+      }
+
+      searchInput.addEventListener("input", (e) => applySearch(e.target.value));
+      resetBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        applySearch("");
+      });
+
+    /* ============================================================
+       Section — DAY SLIDER
+       ============================================================ */
+      const daySlider = document.getElementById("daySlider");
+      const dayLabel = document.getElementById("dayLabel");
+      const dateLabel = document.getElementById("dateLabel");
+      const todayBtn = document.getElementById("todayBtn");
+
+      const TIMEZONE = "America/Los_Angeles";
+      const SLIDER_YEAR = 2026; // hard-set to 2026 for now
+
+      function isLeapYear(year) {
+        return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+      }
+      const MAX_DOY = isLeapYear(SLIDER_YEAR) ? 366 : 365;
+      daySlider.max = String(MAX_DOY);
+
+      // convert doy to formatted PST date
+      function dayOfYearToDateStr(doy, year = SLIDER_YEAR) {
+        // 01/01 in PST
+        const jan1PST = new Date(new Date(year, 0, 1).toLocaleString("en-US", { timeZone: TIMEZONE }));
+        const target = new Date(jan1PST);
+        target.setDate(jan1PST.getDate() + (Number(doy) - 1));
+        const month = String(target.getMonth() + 1).padStart(2, "0");
+        const day = String(target.getDate()).padStart(2, "0");
+        return `${month}/${day}`;
+      }
+
+      // get today's PST doy
+      function getTodayDayOfYear() {
+        const now = new Date();
+        // convert now to PST
+        const nowPST = new Date(now.toLocaleString("en-US", { timeZone: TIMEZONE }));
+        // 01/01 of SLIDER_YEAR converted to PST
+        const startPST = new Date(new Date(SLIDER_YEAR, 0, 1).toLocaleString("en-US", { timeZone: TIMEZONE }));
+        const diffMs = nowPST - startPST;
+        const doy = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+        return Math.min(MAX_DOY, Math.max(1, doy));
+      }
+
+      function setDay(doy) {
+        const v = Math.min(MAX_DOY, Math.max(1, Number(doy)));
+        daySlider.value = String(v);
+        dayLabel.textContent = String(v);
+        dateLabel.textContent = dayOfYearToDateStr(v);
+        applyDayFilter(v);
+      }
+
+      function isDayInRange(day, startDay, endDay) {
+        // assume start <= end always for now
+        return day >= startDay && day <= endDay;
+      }
+
+      function applyDayFilter(day) {
+        let shown = 0;
+        for (const m of markers) {
+          const pin = m.pin;
+          const start = Number(pin.gghStartDay);
+          const end = Number(pin.gghEndDay);
+          const ok = isDayInRange(day, start, end);
+          if (ok) {
+            if (!map.hasLayer(m.marker)) m.marker.addTo(map);
+            shown++;
+          } else {
+            if (map.hasLayer(m.marker)) map.removeLayer(m.marker);
+          }
+        }
+        // Keep your count line consistent with the slider filter:
+        countLine.textContent = `Showing ${shown} pin${shown === 1 ? "" : "s"} (of ${PINS.length})`;
+      }
+
+      daySlider.addEventListener("input", (e) => {
+        setDay(e.target.value);
+      });
+
+      todayBtn.addEventListener("click", () => {
+        setDay(getTodayDayOfYear());
+      });
+
+      // initialize
+      setDay(1);
+
+    /* ============================================================
+       Section 6 — HELPERS + BOOT
+       ============================================================ */
+      function escapeHtml(str) {
+        return String(str)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      // Boot
+      renderPins(PINS);
+      applyDayFilter(Number(daySlider.value));
+  </script>
+</body>
+</html>
