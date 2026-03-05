@@ -5,55 +5,245 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>GGH Locations</title>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
+  <!-- changed to maplibre-->
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
   <style>
-    html, body { height: 100%; margin: 0; }
-    #map { height: 100%; width: 100%; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { 
+      height: 100%; 
+      margin: 0;
+      font-family: "DM Sans", sans-serif;
+      background: #0e1117;
+      color: #f0f0ee; }
+    #map {
+      position : absolute;
+      inset : 0 }
 
     .panel {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 16px;
+      left: 16px;
       z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      padding: 10px 12px;
-      border-radius: 10px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      background: rgba(14, 17, 23, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 18px 16px 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
       max-width: 360px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-    .panel h1 { font-size: 14px; margin: 0 0 6px 0; }
-    .panel p { font-size: 12px; margin: 0; color: #333; line-height: 1.35; }
-
-    .search {
-      margin-top: 8px;
+    .panel-header {
       display: flex;
-      gap: 8px;
-      align-items: center;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding-bottom: 12px;
     }
+
+    .panel-title {
+      font-family: "DM Mono", monospace;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: #f0f0ee;
+    }
+
+    .panel-subtitle {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      font-weight: 300;
+    }
+    
+    .search-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
     input[type="search"] {
       flex: 1;
       padding: 8px 10px;
-      border-radius: 10px;
-      border: 1px solid #ddd;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
+      color: #f0f0ee;
+      font-family: "DM Sans", sans-serif;
       font-size: 12px;
       outline: none;
+      transition: border-color 0.15s;
     }
-    button {
-      border: 0;
-      border-radius: 10px;
-      padding: 8px 10px;
+    input[type="search"]::placeholder { color: rgba(255,255,255,0.3); }
+    input[type="search"]:focus { border-color: rgba(255,255,255,0.25); }
+    input[type="search"]::-webkit-search-cancel-button { display: none; }
+
+    .btn {
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px 11px;
       cursor: pointer;
-      font-size: 12px;
-      background: #f2f2f2;
+      font-family: "DM Mono", monospace;
+      font-size: 11px;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.6);
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
     }
-    .count { margin-top: 6px; font-size: 11px; color: #667; }
+    .btn:hover { background: rgba(255,255,255,0.12); color: #f0f0ee; }
+
+    /* slider */
+    .slider-section {
+      margin-bottom: 14px;
+    }
+
+    .slider-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .slider-label {
+      font-family: "DM Mono", monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .slider-date {
+      font-family: "DM Mono", monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: #f0f0ee;
+      letter-spacing: 0.03em;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 3px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255,255,255,0.12);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f0f0ee;
+      border: 2px solid #0e1117;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f0f0ee;
+      border: 2px solid #0e1117;
+      cursor: pointer;
+    }
+
+    /* legend */
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      padding: 10px 10px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(255,255,255,0.25);
+    }
+
+    .legend-dot.on-campus  { background: #5b9cf6; }
+    .legend-dot.off-campus { background: #f76b6b; }
+
+    /* count line */
+    .count-line {
+      font-family: "DM Mono", monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.28);
+      letter-spacing: 0.03em;
+    }
+
+    /* popup */
+    .maplibregl-popup-content {
+      background: rgba(14, 17, 23, 0.97) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      border-radius: 10px !important;
+      padding: 14px 16px !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+      font-family: "DM Sans", sans-serif !important;
+      color: #f0f0ee !important;
+      min-width: 220px;
+    }
+
+    .maplibregl-popup-tip { display: none !important; }
+    .maplibregl-popup-close-button {
+      color: rgba(255,255,255,0.35) !important;
+      font-size: 16px !important;
+      padding: 4px 8px !important;
+    }
+    .maplibregl-popup-close-button:hover { color: #f0f0ee !important; }
+
+    .popup-name {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .popup-row {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .popup-row strong {
+      color: rgba(255,255,255,0.75);
+      font-weight: 500;
+    }
+
+    .popup-tag {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-family: "DM Mono", monospace;
+      letter-spacing: 0.04em;
+    }
+    .popup-tag.on-campus  { background: rgba(91,156,246,0.15); color: #5b9cf6; border: 1px solid rgba(91,156,246,0.3); }
+    .popup-tag.off-campus { background: rgba(247,107,107,0.15); color: #f76b6b; border: 1px solid rgba(247,107,107,0.3); }
+
+    /* maplibre attribution */
+    .maplibregl-ctrl-attrib { font-size: 10px !important; }
   </style>
 </head>
 
@@ -61,45 +251,49 @@
   <div id="map"></div>
 
   <div class="panel">
-    <h1>GGH Locations</h1>
-    <p>Click on pins for more details.</p>
+    <div class="panel-header">
+      <span class="panel-title">GGH Locations</span>
+      <span class="panel-subtitle">Click pins for more details.</span>
+    </div>
 
-    <div class="search">
+    <!-- search -->
+    <div class="search-row">
       <input id="search" type="search" placeholder="Search by location name" />
-      <button id="resetBtn">Reset</button>
+      <button class ="btn" id="resetBtn">Reset</button>
     </div>
 
-    <div style="margin-top:10px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-        <div style="font-size:12px; color:#333;">
-          Day: <span id="dayLabel">1</span>
-          <span style="color:#667;">(</span><span id="dateLabel">Jan 1</span><span style="color:#666;">)</span>
+    <!-- day slider -->
+    <div class="slider-section">
+      <div class="slider-header">
+        <span class="slider-label">Day <span id="dayNum">1</span></span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="slider-date" id="dateDisplay">Jan 01</span>
+          <button class="btn" id="todayBtn">Today</button>
         </div>
-        <button id="todayBtn" style="padding:6px 10px;">Today</button>
       </div>
-      <input
-        id="daySlider"
-        type="range"
-        min="1"
-        max="365"
-        step="1"
-        value="1"
-        style="width:100%; margin-top:6px;"
-      />
+      <input id="daySlider" type="range" min="1" max="365" step="1" value="1" />
     </div>
-    <div class="count" id="countLine"></div>
-  </div>
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
+    <!-- legend -->
+     <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot on-campus"></div>
+        <span>On-Campus</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot off-campus"></div>
+        <span>Off-Campus</span>
+      </div>
+    </div>
+
+     <div class="count-line" id="countLine"></div>
+  </div>
 
   <script>
     /* ============================================================
        Section 1 — PINS LIST
-       Format: { name: string, lat: number, lng: number, notes: string }
+       Format: { name: string, lat: number, lng: number, gghStartDay: number, gghEndDay: number, tag: string, notes: string }
+       gghStartDay / gghEndDay: day of year integers (1–365)
        ============================================================ */
        const PINS = [
         { name: "Grizzly Peak (KPFA Tower pullout)", lat: 37.865212, lng: -122.222031, gghStartDay: 1, gghEndDay: 31, tag: "Off-Campus", notes: "" },
@@ -137,114 +331,137 @@
     /* ============================================================
        Section 2 — MAP SETTINGS
        ============================================================ */
-      const MAP_CENTER = { lat: 37.8715, lng: -122.2730 }; // University Ave and MLK
-      const START_ZOOM = 12;
-      const MIN_ZOOM = 11;
+      const MAPTILER_STYLE = "https://api.maptiler.com/maps/topo-v4/style.json?key=cv2lryclk9tg1QR6KCLy";
+      const MAP_CENTER = [-122.2730, 37.8715];
+      const START_ZOOM = 11.4;
+
+      const COLOR_ON  = "#5b9cf6";
+      const COLOR_OFF = "#f76b6b";
 
     /* ============================================================
        Section 3 — MAP INIT
        ============================================================ */
-      const map = L.map("map", { zoomControl: true, minZoom: MIN_ZOOM })
-        .setView([MAP_CENTER.lat, MAP_CENTER.lng], START_ZOOM);
+      
+      const map = new maplibregl.Map({
+      container: "map",
+      style: MAPTILER_STYLE,
+      center: MAP_CENTER,
+      zoom: START_ZOOM,
+      minZoom: 9,
+      attributionControl: true,
+    });
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
+    map.addControl(new maplibregl.NavigationControl(), "bottom-right");
 
     /* ============================================================
        Section 4 — MARKERS RENDERING
        ============================================================ */
-       const redIcon = new L.Icon({
-        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
+       // Build a GeoJSON FeatureCollection from visible pins
+       function buildGeoJSON(visiblePins) {
+        return {
+          type: "FeatureCollection",
+          features: visiblePins.map(pin => ({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [pin.lng, pin.lat] },
+            properties: {
+              name: pin.name,
+              notes: pin.notes || "",
+              tag: pin.tag,
+              gghStartDay: pin.gghStartDay,
+              gghEndDay: pin.gghEndDay,
+              lat: pin.lat,
+              lng: pin.lng,
+            }
+          }))
+        };
+      }
+
+    // Add source + two circle layers once map loads
+    map.on("load", () => {
+      // Source (empty to start, we'll update after filters run)
+      map.addSource("pins", {
+        type: "geojson",
+        data: buildGeoJSON([])
       });
 
-      const blueIcon = new L.Icon({
-        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
+      // Off-Campus layer (red)
+      map.addLayer({
+        id: "pins-off",
+        source: "pins",
+        type: "circle",
+        filter: ["==", ["get", "tag"], "Off-Campus"],
+        paint: {
+          "circle-color": COLOR_OFF,
+          "circle-radius": 7,
+          "circle-opacity": 0.9,
+          "circle-stroke-color": "rgba(255,255,255,0.6)",
+          "circle-stroke-width": 1.5,
+        }
       });
 
-      const markers = []; // { marker, pin, searchableText }
-
-      function formatDay(day, year = SLIDER_YEAR) {
-        const d = new Date(year, 0);
-        d.setDate(day);
-        const month = String(d.getMonth() + 1).padStart(2, "0");
-        const date  = String(d.getDate()).padStart(2, "0");
-        return `${month}/${date}`;
-      }
-      
-      function pinPopupHtml(pin) {
-        const nm = escapeHtml(pin.name);
-        const nts = escapeHtml(pin.notes || "").replace(/\n/g, "<br/>");
-        const lat = Number(pin.lat);
-        const lng = Number(pin.lng);
-        const gghLine = `${formatDay(pin.gghStartDay)}–${formatDay(pin.gghEndDay)}`;
-
-        return `
-          <div style="min-width: 240px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;">
-            <div style="font-weight:700; margin-bottom:7px;">${nm}</div>
-
-            <div style="font-size:11px; color:#555; margin-bottom:6px;">
-              <strong>Coordinates:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}
-            </div>
-
-            <div style="font-size:11px; color:#555; margin-bottom:6px;">
-              <strong>GGH Dates:</strong> ${gghLine}
-            </div>
-
-            <div style="font-size:11px; color:#555; margin-bottom:6px;">
-              <strong>Tags:</strong> ${pin.tag}
-            </div>
-
-            <div style="font-size:12px; color:#333; line-height:1.35;">
-              ${nts || ""}
-            </div>
-          </div>
-        `;
-      }
-
-      function renderPins(pinList) {
-        // remove old markers
-        for (const m of markers) map.removeLayer(m.marker);
-        markers.length = 0;
-
-        for (const pin of pinList) {
-          if (!isFinite(pin.lat) || !isFinite(pin.lng)) continue;
-          const icon = pin.tag === "On-Campus" ? blueIcon : redIcon;
-          const marker = L.marker([pin.lat, pin.lng], { icon }).addTo(map);
-          marker.bindPopup(pinPopupHtml(pin));
-          markers.push({
-            marker,
-            pin,
-            searchableText: `${pin.name || ""} ${pin.notes || ""}`.toLowerCase()
-          });
+      // On-Campus layer (blue)
+      map.addLayer({
+        id: "pins-on",
+        source: "pins",
+        type: "circle",
+        filter: ["==", ["get", "tag"], "On-Campus"],
+        paint: {
+          "circle-color": COLOR_ON,
+          "circle-radius": 7,
+          "circle-opacity": 0.9,
+          "circle-stroke-color": "rgba(255,255,255,0.6)",
+          "circle-stroke-width": 1.5,
         }
+      });
 
-        updateCountLine(pinList.length);
-      }
+      // Hover: pointer cursor
+      ["pins-off", "pins-on"].forEach(layerId => {
+        map.on("mouseenter", layerId, () => map.getCanvas().style.cursor = "pointer");
+        map.on("mouseleave", layerId, () => map.getCanvas().style.cursor = "");
 
-      function fitToAllPins(pinList) {
-        const latlngs = pinList
-          .filter(p => isFinite(p.lat) && isFinite(p.lng))
-          .map(p => [p.lat, p.lng]);
+      // Click: show popup
+       map.on("click", layerId, (e) => {
+        const props = e.features[0].properties;
+        // Format GGH date range        
+        const start = Number(props.gghStartDay);
+        const end   = Number(props.gghEndDay);
+        const gghLine =
+          start === end
+          ? doyToDateStr(start)
+          : `${doyToDateStr(start)} – ${doyToDateStr(end)}`;
 
-        if (latlngs.length === 0) return;
-        if (latlngs.length === 1) {
-          map.setView(latlngs[0], 15);
-        } else {
-          map.fitBounds(latlngs, { padding: [40, 40] });
-        }
-      }
+      // Tag class (for styling)
+      const tagClass =
+        props.tag === "On-Campus" ? "on-campus" : "off-campus";
+
+      // Optional notes block
+      const notesHtml = props.notes
+        ? `<div class="popup-row">${props.notes}</div>`
+       : "";
+
+      const html = `
+        <div class="popup-name">${props.name}</div>
+        <div class="popup-row">
+        <strong>Coords:</strong>
+        ${Number(props.lat).toFixed(5)}, ${Number(props.lng).toFixed(5)}
+        </div>
+        <div class="popup-row">
+        <strong>GGH Dates:</strong> ${gghLine}
+        </div>
+        <span class="popup-tag ${tagClass}">${props.tag}</span>
+        ${notesHtml}
+  `   ;
+
+  new maplibregl.Popup({ offset: 12, maxWidth: "280px" })
+    .setLngLat(e.lngLat)
+    .setHTML(html)
+    .addTo(map);
+});
+      });
+
+      // Initial render
+      applyFilters();
+    });
 
     /* ============================================================
        Section 5 — SEARCH UI
@@ -253,39 +470,45 @@
       const resetBtn = document.getElementById("resetBtn");
       const countLine = document.getElementById("countLine");
 
-      function updateCountLine(nShown) {
-        countLine.textContent = `Showing ${nShown} pin${nShown === 1 ? "" : "s"} (of ${PINS.length})`;
-      }
-
-      function applySearch(q) {
-        const query = q.trim().toLowerCase();
-        let shown = 0;
-
-        for (const m of markers) {
-          const match = query === "" || m.searchableText.includes(query);
-          if (match) {
-            if (!map.hasLayer(m.marker)) m.marker.addTo(map);
-            shown++;
-          } else {
-            if (map.hasLayer(m.marker)) map.removeLayer(m.marker);
-          }
-        }
-
-        updateCountLine(shown);
-      }
-
-      searchInput.addEventListener("input", (e) => applySearch(e.target.value));
+      searchInput.addEventListener("input", applyFilters);
       resetBtn.addEventListener("click", () => {
         searchInput.value = "";
-        applySearch("");
+        applyFilters();
       });
 
     /* ============================================================
        Section — DAY SLIDER
        ============================================================ */
+
+      function applyFilters() {
+        const query = document.getElementById("search").value.trim().toLowerCase();
+        const day   = Number(document.getElementById("daySlider").value);
+
+        const visible = PINS.filter(pin => {
+          const matchesSearch = 
+            query === "" ||
+            pin.name.toLowerCase().includes(query) ||
+            (pin.notes || "").toLowerCase().includes(query);
+
+          const matchesDay = 
+            day >= pin.gghStartDay && day <= pin.gghEndDay;
+
+          return matchesSearch && matchesDay;
+      });
+
+      // Update the MapLibre source with new GeoJSON
+      const source = map.getSource("pins");
+      if (source) source.setData(buildGeoJSON(visible));
+
+      // Update count line
+      const n = visible.length;
+      document.getElementById("countLine").textContent =
+        `Showing ${n} pin${n === 1 ? "" : "s"} of ${PINS.length}`;
+    }
+
       const daySlider = document.getElementById("daySlider");
-      const dayLabel = document.getElementById("dayLabel");
-      const dateLabel = document.getElementById("dateLabel");
+      const dayNum = document.getElementById("dayNum");
+      const dateDisplay = document.getElementById("dateDisplay");
       const todayBtn = document.getElementById("todayBtn");
 
       const TIMEZONE = "America/Los_Angeles";
@@ -298,57 +521,26 @@
       daySlider.max = String(MAX_DOY);
 
       // convert doy to formatted PST date
-      function dayOfYearToDateStr(doy, year = SLIDER_YEAR) {
+      function doyToDateStr(doy, year = SLIDER_YEAR) {
         // 01/01 in PST
-        const jan1PST = new Date(new Date(year, 0, 1).toLocaleString("en-US", { timeZone: TIMEZONE }));
-        const target = new Date(jan1PST);
-        target.setDate(jan1PST.getDate() + (Number(doy) - 1));
-        const month = String(target.getMonth() + 1).padStart(2, "0");
-        const day = String(target.getDate()).padStart(2, "0");
-        return `${month}/${day}`;
+        const d = new Date(SLIDER_YEAR, 0, 1);
+        d.setDate(Number(doy));
+        return d.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
       }
 
       // get today's PST doy
-      function getTodayDayOfYear() {
+      function getTodayDOY() {
         const now = new Date();
-        // convert now to PST
-        const nowPST = new Date(now.toLocaleString("en-US", { timeZone: TIMEZONE }));
-        // 01/01 of SLIDER_YEAR converted to PST
-        const startPST = new Date(new Date(SLIDER_YEAR, 0, 1).toLocaleString("en-US", { timeZone: TIMEZONE }));
-        const diffMs = nowPST - startPST;
-        const doy = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
-        return Math.min(MAX_DOY, Math.max(1, doy));
+        const start = new Date(SLIDER_YEAR, 0, 1);
+        return Math.floor((now - start) / 86400000) + 1;
       }
 
       function setDay(doy) {
         const v = Math.min(MAX_DOY, Math.max(1, Number(doy)));
-        daySlider.value = String(v);
-        dayLabel.textContent = String(v);
-        dateLabel.textContent = dayOfYearToDateStr(v);
-        applyDayFilter(v);
-      }
-
-      function isDayInRange(day, startDay, endDay) {
-        // assume start <= end always for now
-        return day >= startDay && day <= endDay;
-      }
-
-      function applyDayFilter(day) {
-        let shown = 0;
-        for (const m of markers) {
-          const pin = m.pin;
-          const start = Number(pin.gghStartDay);
-          const end = Number(pin.gghEndDay);
-          const ok = isDayInRange(day, start, end);
-          if (ok) {
-            if (!map.hasLayer(m.marker)) m.marker.addTo(map);
-            shown++;
-          } else {
-            if (map.hasLayer(m.marker)) map.removeLayer(m.marker);
-          }
-        }
-        // Keep your count line consistent with the slider filter:
-        countLine.textContent = `Showing ${shown} pin${shown === 1 ? "" : "s"} (of ${PINS.length})`;
+        daySlider.value      = v;
+        dayNum.textContent   = v;
+        dateDisplay.textContent = doyToDateStr(v);
+        if (map.isStyleLoaded()) applyFilters();
       }
 
       daySlider.addEventListener("input", (e) => {
@@ -356,7 +548,7 @@
       });
 
       todayBtn.addEventListener("click", () => {
-        setDay(getTodayDayOfYear());
+        setDay(getTodayDOY());
       });
 
       // initialize
@@ -365,18 +557,7 @@
     /* ============================================================
        Section 6 — HELPERS + BOOT
        ============================================================ */
-      function escapeHtml(str) {
-        return String(str)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
-      }
-
-      // Boot
-      renderPins(PINS);
-      applyDayFilter(Number(daySlider.value));
+      
   </script>
 </body>
 </html>
