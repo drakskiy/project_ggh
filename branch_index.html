@@ -558,7 +558,7 @@
             query === "" ||
             pin.name.toLowerCase().includes(query) ||
             (pin.notes || "").toLowerCase().includes(query);
-            
+
           const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
           const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
           const matchesDay = showAll ? true : (matchesSpring || matchesFall);
@@ -733,7 +733,7 @@
       }
 
       function buildValidRegionGeoJSON(dayNum) {
-        if (dayNum >= 104 && dayNum <= 242) {
+        if (dayNum >= 83 && dayNum <= 261) {
           return {
             type: "FeatureCollection",
             features: []
