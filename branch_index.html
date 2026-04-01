@@ -357,6 +357,18 @@
       const COLOR_ON  = "#5b9cf6";
       const COLOR_OFF = "#f76b6b";
 
+      const MIDPOINT = [-122.4785691240060, 37.8198754226465];
+      const NORTH_TOWER = [-122.4792559011720, 37.8256669371344];
+      const SOUTH_TOWER = [-122.4778823468390, 37.8140839081585];
+
+      const GRID_LNG_MIN = -122.55;
+      const GRID_LNG_MAX = -121.85;
+      const GRID_LAT_MIN = 37.78;
+      const GRID_LAT_MAX = 37.93;
+      const GRID_STEP_DEG = 0.001;
+
+      const VALID_FILL = "rgba(255, 215, 0, 0.16)";
+
     /* ============================================================
        Section 3 — MAP INIT
        ============================================================ */
@@ -404,6 +416,20 @@
         map.addSource("pins", {
           type: "geojson",
           data: buildGeoJSON([])
+        });
+
+        map.addSource("valid-region", {
+          type: "geojson",
+          data: buildValidRegionGeoJSON(Number(daySlider.value))
+        });
+
+        map.addLayer({
+          id: "valid-region-fill",
+          source: "valid-region",
+          type: "fill",
+          paint: {
+            "fill-color": VALID_FILL
+          }
         });
 
         map.addLayer({
@@ -509,13 +535,13 @@
       resetBtn.addEventListener("click", () => {
         searchInput.value = "";
         showAll = false;
-        showAllBtn.textContent = "Show All";
+        showAllBtn.textContent = "Show All Pins";
         applyFilters();
       });
 
       showAllBtn.addEventListener("click", () => {
         showAll = !showAll;
-        showAllBtn.textContent = showAll ? "Filter by Date" : "Show All";
+        showAllBtn.textContent = showAll ? "Filter by Date" : "Show All Pins";
         applyFilters();
       });
 
@@ -525,17 +551,17 @@
       let showAll = false;
       function applyFilters() {
         const query = document.getElementById("search").value.trim().toLowerCase();
-        const day   = Number(document.getElementById("daySlider").value);
+        const day = Number(document.getElementById("daySlider").value);
 
         const visible = PINS.filter(pin => {
           const matchesSearch =
             query === "" ||
             pin.name.toLowerCase().includes(query) ||
             (pin.notes || "").toLowerCase().includes(query);
-
+            
           const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
-          const matchesFall   = day >= pin.gghStartFa && day <= pin.gghEndFa;
-          const matchesDay    = showAll ? true : (matchesSpring || matchesFall);
+          const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
+          const matchesDay = showAll ? true : (matchesSpring || matchesFall);
 
           return matchesSearch && matchesDay;
         });
@@ -579,10 +605,17 @@
 
       function setDay(doy) {
         const v = Math.min(MAX_DOY, Math.max(1, Number(doy)));
-        daySlider.value      = v;
-        dayNum.textContent   = v;
+        daySlider.value = v;
+        dayNum.textContent = v;
         dateDisplay.textContent = doyToDateStr(v);
-        if (map.isStyleLoaded()) applyFilters();
+
+        if (map.isStyleLoaded()) {
+          const regionSource = map.getSource("valid-region");
+          if (regionSource) {
+            regionSource.setData(buildValidRegionGeoJSON(v));
+          }
+          applyFilters();
+        }
       }
 
       daySlider.addEventListener("input", (e) => {
@@ -599,6 +632,135 @@
     /* ============================================================
        Section 7 — HELPERS + BOOT
        ============================================================ */
+      function degToRad(deg) {
+        return deg * Math.PI / 180;
+      }
+
+      function radToDeg(rad) {
+        return rad * 180 / Math.PI;
+      }
+
+      // bearing from observer to target from true north
+      function bearingDeg(fromLng, fromLat, toLng, toLat) {
+        const φ1 = degToRad(fromLat);
+        const φ2 = degToRad(toLat);
+        const λ1 = degToRad(fromLng);
+        const λ2 = degToRad(toLng);
+
+        const y = Math.sin(λ2 - λ1) * Math.cos(φ2);
+        const x =
+          Math.cos(φ1) * Math.sin(φ2) -
+          Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1);
+
+        return (radToDeg(Math.atan2(y, x)) + 360) % 360;
+      }
+
+      // smallest signed angular difference a-b in (-180, 180]
+      function signedAngleDiff(a, b) {
+        return ((a - b + 540) % 360) - 180;
+      }
+
+      function approxDeclinationDeg(dayNum, daysThisYear) {
+        return radToDeg(
+          0.006918
+          - 0.399912 * Math.cos((2 * Math.PI * (dayNum - 1)) / daysThisYear)
+          + 0.070257 * Math.sin((2 * Math.PI * (dayNum - 1)) / daysThisYear)
+          - 0.006758 * Math.cos((4 * Math.PI * (dayNum - 1)) / daysThisYear)
+          + 0.000907 * Math.sin((4 * Math.PI * (dayNum - 1)) / daysThisYear)
+          - 0.002697 * Math.cos((6 * Math.PI * (dayNum - 1)) / daysThisYear)
+          + 0.00148  * Math.sin((6 * Math.PI * (dayNum - 1)) / daysThisYear)
+        );
+      }
+
+      function approxSunsetAzimuthDeg(latDeg, dayNum, year = SLIDER_YEAR) {
+        const daysThisYear = isLeapYear(year) ? 366 : 365;
+        const declDeg = approxDeclinationDeg(dayNum, daysThisYear);
+        const val = Math.sin(degToRad(declDeg)) / Math.cos(degToRad(latDeg));
+        const clamped = Math.max(-1, Math.min(1, val));
+        return ((360 - radToDeg(Math.acos(clamped))) % 360) + 0.5;
+      }
+
+      function normalize360(angle) {
+        return ((angle % 360) + 360) % 360;
+      }
+
+      function angularWidth(a, b) {
+        return Math.abs(signedAngleDiff(a, b));
+      }
+
+      function isAngleWithinBand(angle, center, widthDeg) {
+        return Math.abs(signedAngleDiff(angle, center)) <= widthDeg / 2;
+      }
+
+      function getBridgeBounds(lng, lat) {
+        const thetaMid = bearingDeg(lng, lat, MIDPOINT[0], MIDPOINT[1]);
+        const thetaNorth = bearingDeg(lng, lat, NORTH_TOWER[0], NORTH_TOWER[1]);
+        const thetaSouth = bearingDeg(lng, lat, SOUTH_TOWER[0], SOUTH_TOWER[1]);
+
+        const bridgeDelta = angularWidth(thetaSouth, thetaNorth);
+        const allowedDelta = bridgeDelta / 3;
+
+        const center = thetaMid;
+        const upper = normalize360(center + allowedDelta / 2);
+        const lower = normalize360(center - allowedDelta / 2);
+
+        return {
+          thetaMid,
+          thetaNorth,
+          thetaSouth,
+          bridgeDelta,
+          allowedDelta,
+          center,
+          upper,
+          lower
+        };
+      }
+
+      function isValidObserverForDay(lng, lat, dayNum) {
+        const sunAz = approxSunsetAzimuthDeg(lat, dayNum);
+        const bounds = getBridgeBounds(lng, lat);
+        return isAngleWithinBand(sunAz, bounds.center, bounds.allowedDelta);
+      }
+
+      function cellPolygon(lng, lat, step) {
+        return [[
+          [lng, lat],
+          [lng + step, lat],
+          [lng + step, lat + step],
+          [lng, lat + step],
+          [lng, lat]
+        ]];
+      }
+
+      function buildValidRegionGeoJSON(dayNum) {
+        if (dayNum >= 104 && dayNum <= 242) {
+          return {
+            type: "FeatureCollection",
+            features: []
+          };
+        }
+        const features = [];
+        for (let lng = GRID_LNG_MIN; lng < GRID_LNG_MAX; lng += GRID_STEP_DEG) {
+          for (let lat = GRID_LAT_MIN; lat < GRID_LAT_MAX; lat += GRID_STEP_DEG) {
+            const centerLng = lng + GRID_STEP_DEG / 2;
+            const centerLat = lat + GRID_STEP_DEG / 2;
+            if (isValidObserverForDay(centerLng, centerLat, dayNum)) {
+              features.push({
+                type: "Feature",
+                geometry: {
+                  type: "Polygon",
+                  coordinates: cellPolygon(lng, lat, GRID_STEP_DEG)
+                },
+                properties: {}
+              });
+            }
+          }
+        }
+        return {
+          type: "FeatureCollection",
+          features
+        };
+      }
       
   </script>
 </body>
