@@ -367,8 +367,6 @@
       const GRID_LAT_MAX = 37.93;
       const GRID_STEP_DEG = 0.001;
 
-      const VALID_FILL = "rgba(255, 215, 0, 0.16)";
-
     /* ============================================================
        Section 3 — MAP INIT
        ============================================================ */
@@ -420,7 +418,7 @@
 
         map.addSource("valid-region", {
           type: "geojson",
-          data: buildValidRegionGeoJSON(Number(daySlider.value))
+          data: buildBoundaryFillGeoJSON(Number(daySlider.value))
         });
 
         map.addLayer({
@@ -428,7 +426,8 @@
           source: "valid-region",
           type: "fill",
           paint: {
-            "fill-color": VALID_FILL
+            "fill-color": "#FFD700",
+            "fill-opacity": 0.35
           }
         });
 
@@ -612,7 +611,7 @@
         if (map.isStyleLoaded()) {
           const regionSource = map.getSource("valid-region");
           if (regionSource) {
-            regionSource.setData(buildValidRegionGeoJSON(v));
+            regionSource.setData(buildBoundaryFillGeoJSON(v));
           }
           applyFilters();
         }
@@ -630,8 +629,8 @@
       setDay(1);
 
     /* ============================================================
-       Section 7 — HELPERS + BOOT
-       ============================================================ */
+        Section 7 — HELPERS + BOOT
+        ============================================================ */
       function degToRad(deg) {
         return deg * Math.PI / 180;
       }
@@ -642,22 +641,28 @@
 
       // bearing from observer to target from true north
       function bearingDeg(fromLng, fromLat, toLng, toLat) {
-        const φ1 = degToRad(fromLat);
-        const φ2 = degToRad(toLat);
-        const λ1 = degToRad(fromLng);
-        const λ2 = degToRad(toLng);
-
-        const y = Math.sin(λ2 - λ1) * Math.cos(φ2);
+        const phi1 = degToRad(fromLat);
+        const phi2 = degToRad(toLat);
+        const lambda1 = degToRad(fromLng);
+        const lambda2 = degToRad(toLng);
+        const y = Math.sin(lambda2 - lambda1) * Math.cos(phi2);
         const x =
-          Math.cos(φ1) * Math.sin(φ2) -
-          Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1);
-
+          Math.cos(phi1) * Math.sin(phi2) -
+          Math.sin(phi1) * Math.cos(phi2) * Math.cos(lambda2 - lambda1);
         return (radToDeg(Math.atan2(y, x)) + 360) % 360;
       }
 
       // smallest signed angular difference a-b in (-180, 180]
       function signedAngleDiff(a, b) {
         return ((a - b + 540) % 360) - 180;
+      }
+
+      function normalize360(angle) {
+        return ((angle % 360) + 360) % 360;
+      }
+
+      function angularWidth(a, b) {
+        return Math.abs(signedAngleDiff(a, b));
       }
 
       function approxDeclinationDeg(dayNum, daysThisYear) {
@@ -677,33 +682,18 @@
         const declDeg = approxDeclinationDeg(dayNum, daysThisYear);
         const val = Math.sin(degToRad(declDeg)) / Math.cos(degToRad(latDeg));
         const clamped = Math.max(-1, Math.min(1, val));
-        return ((360 - radToDeg(Math.acos(clamped))) % 360) + 0.5;
-      }
-
-      function normalize360(angle) {
-        return ((angle % 360) + 360) % 360;
-      }
-
-      function angularWidth(a, b) {
-        return Math.abs(signedAngleDiff(a, b));
-      }
-
-      function isAngleWithinBand(angle, center, widthDeg) {
-        return Math.abs(signedAngleDiff(angle, center)) <= widthDeg / 2;
+        return ((360 - radToDeg(Math.acos(clamped))) % 360) + 0.5; // original epsilon is 0.5!
       }
 
       function getBridgeBounds(lng, lat) {
         const thetaMid = bearingDeg(lng, lat, MIDPOINT[0], MIDPOINT[1]);
         const thetaNorth = bearingDeg(lng, lat, NORTH_TOWER[0], NORTH_TOWER[1]);
         const thetaSouth = bearingDeg(lng, lat, SOUTH_TOWER[0], SOUTH_TOWER[1]);
-
         const bridgeDelta = angularWidth(thetaSouth, thetaNorth);
         const allowedDelta = bridgeDelta / 3;
-
         const center = thetaMid;
         const upper = normalize360(center + allowedDelta / 2);
         const lower = normalize360(center - allowedDelta / 2);
-
         return {
           thetaMid,
           thetaNorth,
@@ -716,49 +706,142 @@
         };
       }
 
-      function isValidObserverForDay(lng, lat, dayNum) {
+      // residual = 0 exactly on the requested boundary
+      function boundaryResidual(lng, lat, dayNum, side) {
         const sunAz = approxSunsetAzimuthDeg(lat, dayNum);
         const bounds = getBridgeBounds(lng, lat);
-        return isAngleWithinBand(sunAz, bounds.center, bounds.allowedDelta);
+        if (side === "upper") {
+          return signedAngleDiff(sunAz, bounds.upper);
+        }
+        return signedAngleDiff(sunAz, bounds.lower);
       }
 
-      function cellPolygon(lng, lat, step) {
-        return [[
-          [lng, lat],
-          [lng + step, lat],
-          [lng + step, lat + step],
-          [lng, lat + step],
-          [lng, lat]
-        ]];
+      // find latitude for one longitude
+      function findBoundaryLatAtLng(lng, dayNum, side) {
+        const step = GRID_STEP_DEG;
+        let prevLat = GRID_LAT_MIN;
+        let prevVal = boundaryResidual(lng, prevLat, dayNum, side);
+
+        for (let lat = GRID_LAT_MIN + step; lat <= GRID_LAT_MAX; lat += step) {
+          const val = boundaryResidual(lng, lat, dayNum, side);
+
+          if (Math.abs(val) < 1e-8) {
+            return lat;
+          }
+
+          if ((prevVal < 0 && val > 0) || (prevVal > 0 && val < 0)) {
+            let loLat = prevLat;
+            let hiLat = lat;
+            let loVal = prevVal;
+            let hiVal = val;
+
+            for (let i = 0; i < 32; i++) {
+              const midLat = (loLat + hiLat) / 2;
+              const midVal = boundaryResidual(lng, midLat, dayNum, side);
+
+              if (Math.abs(midVal) < 1e-8) {
+                return midLat;
+              }
+
+              if ((loVal < 0 && midVal > 0) || (loVal > 0 && midVal < 0)) {
+                hiLat = midLat;
+                hiVal = midVal;
+              } else {
+                loLat = midLat;
+                loVal = midVal;
+              }
+            }
+
+            return (loLat + hiLat) / 2;
+          }
+
+          prevLat = lat;
+          prevVal = val;
+        }
+
+        return null;
       }
 
-      function buildValidRegionGeoJSON(dayNum) {
+      function buildBoundaryFillGeoJSON(dayNum) {
         if (dayNum >= 83 && dayNum <= 261) {
           return {
             type: "FeatureCollection",
             features: []
           };
         }
-        const features = [];
-        for (let lng = GRID_LNG_MIN; lng < GRID_LNG_MAX; lng += GRID_STEP_DEG) {
-          for (let lat = GRID_LAT_MIN; lat < GRID_LAT_MAX; lat += GRID_STEP_DEG) {
-            const centerLng = lng + GRID_STEP_DEG / 2;
-            const centerLat = lat + GRID_STEP_DEG / 2;
-            if (isValidObserverForDay(centerLng, centerLat, dayNum)) {
-              features.push({
-                type: "Feature",
-                geometry: {
-                  type: "Polygon",
-                  coordinates: cellPolygon(lng, lat, GRID_STEP_DEG)
-                },
-                properties: {}
-              });
-            }
+
+        const rows = [];
+
+        for (let lng = GRID_LNG_MIN; lng <= GRID_LNG_MAX; lng += GRID_STEP_DEG) {
+          const upperLat = findBoundaryLatAtLng(lng, dayNum, "upper");
+          const lowerLat = findBoundaryLatAtLng(lng, dayNum, "lower");
+
+          if (upperLat !== null && lowerLat !== null && upperLat >= lowerLat) {
+            rows.push({
+              lng,
+              upper: upperLat,
+              lower: lowerLat
+            });
           }
         }
+
+        if (rows.length < 2) {
+          return {
+            type: "FeatureCollection",
+            features: []
+          };
+        }
+
+        const segments = [];
+        let current = [rows[0]];
+
+        for (let i = 1; i < rows.length; i++) {
+          const prev = rows[i - 1];
+          const curr = rows[i];
+
+          if (curr.lng - prev.lng <= GRID_STEP_DEG * 1.5) {
+            current.push(curr);
+          } else {
+            if (current.length >= 2) segments.push(current);
+            current = [curr];
+          }
+        }
+
+        if (current.length >= 2) {
+          segments.push(current);
+        }
+
+        if (segments.length === 0) {
+          return {
+            type: "FeatureCollection",
+            features: []
+          };
+        }
+
+        let bestSegment = segments[0];
+        for (const seg of segments) {
+          if (seg.length > bestSegment.length) {
+            bestSegment = seg;
+          }
+        }
+
+        const upperCoords = bestSegment.map(p => [p.lng, p.upper]);
+        const lowerCoords = bestSegment.map(p => [p.lng, p.lower]).reverse();
+
+        const ring = [...upperCoords, ...lowerCoords, upperCoords[0]];
+
         return {
           type: "FeatureCollection",
-          features
+          features: [
+            {
+              type: "Feature",
+              geometry: {
+                type: "Polygon",
+                coordinates: [ring]
+              },
+              properties: {}
+            }
+          ]
         };
       }
       
