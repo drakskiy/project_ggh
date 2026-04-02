@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Golden Gate Henge</title>
+
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { 
+      height: 100%; 
+      margin: 0;
+      font-family: "DM Sans", sans-serif;
+      background: #0e1117;
+      color: #f0f0ee; }
+    #map {
+      position : absolute;
+      inset : 0 }
+
+    /* PANEL */
+    .panel {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 1000;
+      background: rgba(14, 17, 23, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 18px 16px 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      max-width: 360px;
+    }
+    .panel-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding-bottom: 12px;
+    }
+
+    .panel-title {
+      font-family: "DM Mono", monospace;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: #f0f0ee;
+    }
+
+    .panel-subtitle {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      font-weight: 300;
+    }
+    
+    .search-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    input[type="search"] {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
+      color: #f0f0ee;
+      font-family: "DM Sans", sans-serif;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="search"]::placeholder { color: rgba(255,255,255,0.3); }
+    input[type="search"]:focus { border-color: rgba(255,255,255,0.25); }
+    input[type="search"]::-webkit-search-cancel-button { display: none; }
+
+    .btn {
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px 11px;
+      cursor: pointer;
+      font-family: "DM Mono", monospace;
+      font-size: 11px;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.6);
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: rgba(255,255,255,0.12); color: #f0f0ee; }
+
+    /* SLIDER */
+    .slider-section {
+      margin-bottom: 14px;
+    }
+
+    .slider-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .slider-label {
+      font-family: "DM Mono", monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .slider-date {
+      font-family: "DM Mono", monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: #f0f0ee;
+      letter-spacing: 0.03em;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 3px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255,255,255,0.12);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f0f0ee;
+      border: 2px solid #0e1117;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #f0f0ee;
+      border: 2px solid #0e1117;
+      cursor: pointer;
+    }
+
+    /* LEGEND */
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      padding: 10px 10px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(255,255,255,0.25);
+    }
+
+    .legend-dot.on-campus  { background: #5b9cf6; }
+    .legend-dot.off-campus { background: #f76b6b; }
+
+    /* count line */
+    .count-line {
+      font-family: "DM Mono", monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.28);
+      letter-spacing: 0.03em;
+    }
+
+    /* popup */
+    .maplibregl-popup-content {
+      background: rgba(14, 17, 23, 0.97) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      border-radius: 12px !important;
+      padding: 0 !important;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6) !important;
+      font-family: "DM Sans", sans-serif !important;
+      color: #f0f0ee !important;
+      min-width: 240px;
+      MAX-WIDTH: 280px;
+      overflow: hidden; /* clips photo */
+    }
+
+    .maplibregl-popup-tip { display: none !important; }
+    .maplibregl-popup-close-button {
+      color: rgba(255,255,255,0.35) !important;
+      font-size: 18px !important;
+      padding: 6px 10px !important;
+      z-index: 10;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+    .maplibregl-popup-close-button:hover { color: #f0f0ee !important; }
+
+    .popup-photo {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+      border-bottom: 1px solid rba(255, 255, 255, 0.08);
+    }
+
+    .popup-body {
+      padding: 13px 15px 14px;
+    }
+    
+    .popup-name {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 9px;
+      line-height: 1.3;
+    }
+
+    .popup-row {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .popup-row strong {
+      color: rgba(255,255,255,0.75);
+      font-weight: 500;
+    }
+
+    /* RATINGS */
+    .popup-ratings {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 8px 0 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .rating-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .rating-label {
+      font-family: "DM Mono", monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+    }
+    .rating-stars {
+      font-size: 15px;
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+
+    .popup-tag {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-family: "DM Mono", monospace;
+      letter-spacing: 0.04em;
+    }
+    .popup-tag.on-campus  { background: rgba(91,156,246,0.15); color: #5b9cf6; border: 1px solid rgba(91,156,246,0.3); }
+    .popup-tag.off-campus { background: rgba(247,107,107,0.15); color: #f76b6b; border: 1px solid rgba(247,107,107,0.3); }
+
+    /* maplibre attribution */
+    .maplibregl-ctrl-attrib { font-size: 10px !important; }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">GGH Locations </span>
+      <span class="panel-subtitle">Click pins for more details.</span>
+    </div>
+
+    <!-- search -->
+    <div class="search-row">
+      <input id="search" type="search" placeholder="Search by location name" />
+      <button class ="btn" id="resetBtn">Reset</button>
+    </div>
+
+    <!-- day slider -->
+    <div class="slider-section">
+      <div class="slider-header">
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <span class="slider-label">
+            Day <span id="dayNum">1</span>
+          </span>
+          <span style="color:rgba(255,255,255,0.35);">/</span>
+          <span class="slider-date" id="dateDisplay">
+            Jan 01
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btn" id="todayBtn">Today</button>
+        </div>
+      </div>
+      <input id="daySlider" type="range" min="1" max="365" step="1" value="1" />
+    </div>
+
+    <!-- legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot on-campus"></div>
+        <span>On-Campus</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot off-campus"></div>
+        <span>Off-Campus</span>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; margin-top:10px;">
+      <div class="count-line" id="countLine"></div>
+      <button class="btn" id="showAllBtn" style="margin-left:auto;">Show All Pins</button>
+    </div>
+  <script>
+    /* ============================================================
+       Section 1 — PINS LIST
+       Format: { 
+          name: string,
+          lat: int,
+          lng: int,
+          gghStartSp: int,
+          gghEndSp: int,
+          gghStartFa: int,
+          gghEndFa: int,
+          tag: string,
+          access: double,
+          views: double,
+          env: double,
+          notes: string
+       ============================================================ */
+       const PINS = [
+        { name: "Albany Bulb", address: "Buchanan St, Albany, CA", photo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/20221009_123157_HDR.jpg", lat: 37.8888190128995, lng: -122.327415343957, gghStartSp: 346, gghEndSp: 365, gghStartFa: 346, gghEndFa: 365, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Indian Rock Park", address: "950 Indian Rock Ave, Berkeley, CA", lat: 37.8922186297827, lng: -122.273079038403, gghStartSp: 23, gghEndSp: 26, gghStartFa: 320, gghEndFa: 322, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Grotto Rock Park", lat: 37.8934271576909, lng: -122.268772249069, gghStartSp: 23, gghEndSp: 26, gghStartFa: 319, gghEndFa: 322, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Seaview Trail Vista", lat: 37.8941055046049, lng: -122.234256937359, gghStartSp: 32, gghEndSp: 34, gghStartFa: 312, gghEndFa: 313, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Cesar Chavez Park (north end)", address: "11 Spinnaker Way, Berkeley, CA", lat: 37.874363168464, lng: -122.324623478546, gghStartSp: 22, gghEndSp: 26, gghStartFa: 320, gghEndFa: 324, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Cesar Chavez Park (south end)", address: "11 Spinnaker Way, Berkeley, CA", lat: 37.8696703920424, lng: -122.320255234011, gghStartSp: 29, gghEndSp: 33, gghStartFa: 313, gghEndFa: 316, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Bayview Pl", lat: 37.8843472745503, lng: -122.262806137463, gghStartSp: 33, gghEndSp: 35, gghStartFa: 311, gghEndFa: 313, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Atlas Path Vista", lat: 37.8868405145148, lng: -122.25041512177, gghStartSp: 34, gghEndSp: 35, gghStartFa: 310, gghEndFa: 312, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Berkeley Bay Vista", lat: 37.8804262480801, lng: -122.247626549108, gghStartSp: 39, gghEndSp: 40, gghStartFa: 305, gghEndFa: 307, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Lawrence Hall of Science", lat: 37.878412, lng: -122.247044, gghStartSp: 40, gghEndSp: 42, gghStartFa: 303, gghEndFa: 305, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Grizzly Peak (main pullout)", lat: 37.8812286530182, lng: -122.231515513766, gghStartSp: 41, gghEndSp: 42, gghStartFa: 303, gghEndFa: 304, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Big C", lat: 37.8745311105514, lng: -122.249589757626, gghStartSp: 42, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Brickyard Cove (Berkeley Marina)", lat: 37.8598142764415, lng: -122.305735651139, gghStartSp: 43, gghEndSp: 46, gghStartFa: 300, gghEndFa: 302, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Picnic View Ridge", lat: 37.871545273863, lng: -122.22968464953, gghStartSp: 47, gghEndSp: 49, gghStartFa: 296, gghEndFa: 298, tag: "Off-Campus", access: 3, views: 5, env: 5, notes: "" },
+        { name: "Grizzly Peak (giant log pullout)", lat: 37.8722073897154, lng: -122.220588331848, gghStartSp: 48, gghEndSp: 49, gghStartFa: 296, gghEndFa: 297, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Clark Kerr Track", lat: 37.8647545004258, lng: -122.24647976126, gghStartSp: 49, gghEndSp: 51, gghStartFa: 294, gghEndFa: 296, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Stonewall-Panoramic Trail Vista", lat: 37.8655644745048, lng: -122.240581102592, gghStartSp: 50, gghEndSp: 51, gghStartFa: 294, gghEndFa: 296, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Grizzly Peak (KPFA Tower pullout)", address: "4901 Grizzly Peak Blvd, Berkeley, CA", lat: 37.8651820930087, lng: -122.222135855337, gghStartSp: 52, gghEndSp: 53, gghStartFa: 292, gghEndFa: 293, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Point Emery", photo: "https://www.emeryville.org/files/assets/city/v/1/community-services/images/parks/point-emery.png?dimension=pageimage&w=480",lat: 37.8457293526268, lng: -122.302198015687, gghStartSp: 56, gghEndSp: 58, gghStartFa: 287, gghEndFa: 289, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Emeryville Marina Park", address: "3310 Powell St, Emeryville, CA", photo: "https://www.emeryville.org/files/assets/city/v/2/community-services/images/parks/marina-park.jpeg?dimension=pageimage&w=480", lat: 37.8424286024585, lng: -122.314367444065, gghStartSp: 57, gghEndSp: 59, gghStartFa: 285, gghEndFa: 288, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Mt Diablo Summit Visitor Center", lat: 37.8818042559832, lng: -121.914290020331, gghStartSp: 63, gghEndSp: 63, gghStartFa: 282, gghEndFa: 282, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Treasure Island NW", lat: 37.8303856995793, lng: -122.377617269266, gghStartSp: 61, gghEndSp: 65, gghStartFa: 279, gghEndFa: 284, tag: "Off-Campus", access: 2, views: 5, env: 5, notes: "Toll is paid entering and leaving Treasure Island during peak hours, making the round-trip cost $10-20." },
+        { name: "Alcatraz Viewpoint (Barker Beach)", lat: 37.8268929527263, lng: -122.424130452215, gghStartSp: 55, gghEndSp: 64, gghStartFa: 281, gghEndFa: 290, tag: "Off-Campus", access: 1, views: 5, env: 5, notes: "The Alcatraz ferry is the only authorized way to reach the island. Adult tickets sell for roughly $45-60 and can sell out 90 days in advance." },
+        { name: "Joaquin Miller Park (Lookout Point)", lat: 37.8128316018722, lng: -122.194258955209, gghStartSp: 81, gghEndSp: 82, gghStartFa: 262, gghEndFa: 263, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Evans Hall F10 Balcony", lat: 37.8734336917814, lng: -122.258000827204, gghStartSp: 42, gghEndSp: 43, gghStartFa: 302, gghEndFa: 304, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Graduate Theological Union Balcony", lat: 37.8754152586105, lng: -122.262049887252, gghStartSp: 39, gghEndSp: 41, gghStartFa: 304, gghEndFa: 306, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Ridge Path", lat: 37.8764686028796, lng: -122.263984471867, gghStartSp: 38, gghEndSp: 40, gghStartFa: 305, gghEndFa: 307, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Cal Memorial Stadium Concourse", lat: 37.8704318904843, lng: -122.251501483844, gghStartSp: 45, gghEndSp: 46, gghStartFa: 299, gghEndFa: 300, tag: "On-Campus", access: 2, views: 5, env: 4, notes: "" },
+        { name: "Top of Campanile", lat: 37.8720578106133, lng: -122.25787494319, gghStartSp: 43, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Tan Kee Hall 775 Balcony", address: "University Dr, Berkeley, CA", lat: 37.8730803891031, lng: -122.256571043642, gghStartSp: 42, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "On-Campus", access: 3, views: 3, env: 5, notes: "" }
+      ];
+
+    /* ============================================================
+       Section 2 — MAP SETTINGS
+       ============================================================ */
+      const MAPTILER_STYLE = "https://api.maptiler.com/maps/topo-v4/style.json?key=cv2lryclk9tg1QR6KCLy";
+      const MAP_CENTER = [-122.2730, 37.8715];
+      const START_ZOOM = 11.4;
+
+      const COLOR_ON  = "#5b9cf6";
+      const COLOR_OFF = "#f76b6b";
+
+      // Pin sizing — tweak these two numbers to adjust all pins at once
+      const PIN_RADIUS       = 8;    // px, the visible filled circle
+      const PIN_TOUCH_RADIUS = 18;   // px, invisible hit target around each pin
+
+
+      const MIDPOINT = [-122.4785691240060, 37.8198754226465];
+      const NORTH_TOWER = [-122.4792559011720, 37.8256669371344];
+      const SOUTH_TOWER = [-122.4778823468390, 37.8140839081585];
+
+      const GRID_LNG_MIN = -122.55;
+      const GRID_LNG_MAX = -121.85;
+      const GRID_LAT_MIN = 37.78;
+      const GRID_LAT_MAX = 37.93;
+      const GRID_STEP_DEG = 0.001;
+      const VALID_FILL = "rgba(255, 215, 0, 0.16)";
+
+    /* ============================================================
+       Section 3 — MAP INIT
+       ============================================================ */
+      
+      const map = new maplibregl.Map({
+      container: "map",
+      style: MAPTILER_STYLE,
+      center: MAP_CENTER,
+      zoom: START_ZOOM,
+      minZoom: 9,
+      attributionControl: true,
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), "bottom-right");
+
+    /* ============================================================
+       Section 4 — GeoJSON + LAYERS
+       ============================================================ */
+       function buildGeoJSON(visiblePins) {
+        return {
+          type: "FeatureCollection",
+          features: visiblePins.map(pin => ({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [pin.lng, pin.lat] },
+            properties: {
+              name: pin.name,
+              notes: pin.notes || "",
+              address: pin.address || "",
+              photo:      pin.photo   || "",
+              tag: pin.tag,
+              gghStartSp: pin.gghStartSp,
+              gghEndSp: pin.gghEndSp,
+              gghStartFa: pin.gghStartFa,
+              gghEndFa: pin.gghEndFa,
+              access: pin.access,
+              views: pin.views,
+              env: pin.env,
+              lat: pin.lat,
+              lng: pin.lng,
+            }
+          }))
+        };
+      }
+
+      function ratingDots(score, max = 5) {
+      const filled = Math.round(score);
+      return "●".repeat(filled) + "○".repeat(max - filled);
+      }
+
+      function buildPopupHtml(props) {
+      const tagClass = props.tag === "On-Campus" ? "on-campus" : "off-campus";
+
+      const spStart = Number(props.gghStartSp);
+      const spEnd   = Number(props.gghEndSp);
+      const faStart = Number(props.gghStartFa);
+      const faEnd   = Number(props.gghEndFa);
+
+      const springLine = spStart === spEnd
+        ? doyToDateStr(spStart)
+        : `${doyToDateStr(spStart)} – ${doyToDateStr(spEnd)}`;
+      const fallLine = faStart === faEnd
+        ? doyToDateStr(faStart)
+        : `${doyToDateStr(faStart)} – ${doyToDateStr(faEnd)}`;
+      const samePeriod = spStart === faStart && spEnd === faEnd;
+
+      const dateHtml = samePeriod
+        ? `<div class="popup-row"><strong>GGH Dates:</strong> ${springLine}</div>`
+        : `<div class="popup-row"><strong>Spring Dates:</strong> ${springLine}</div>
+           <div class="popup-row"><strong>Fall Dates:</strong> ${fallLine}</div>`;
+
+      // Photo — only rendered if the field is non-empty
+      const photoHtml = props.photo
+        ? `<img class="popup-photo" src="${props.photo}" alt="${props.name}" onerror="this.style.display='none'" />`
+        : "";
+
+      // Address — only rendered if non-empty
+      const addressHtml = props.address
+        ? `<div class="popup-row"><strong>Address:</strong> ${props.address}</div>`
+        : "";
+
+      const notesHtml = props.notes
+        ? `<div class="popup-row" style="margin-top:6px; color:rgba(255,255,255,0.75);">${props.notes}</div>`
+        : "";
+
+      return `
+        ${photoHtml}
+        <div class="popup-body">
+          <div class="popup-name">${props.name}</div>
+          ${addressHtml}
+          <div class="popup-row"><strong>Coordinates:</strong> ${Number(props.lat).toFixed(5)}, ${Number(props.lng).toFixed(5)}</div>
+          ${dateHtml}
+
+          <div class="popup-ratings">
+            <div class="rating-item">
+              <span class="rating-label">Accessibility</span>
+              <span class="rating-stars" style="color:#5b9cf6;">${ratingDots(props.access)}</span>
+            </div>
+            <div class="rating-item">
+              <span class="rating-label">Views</span>
+              <span class="rating-stars" style="color:#f5c842;">${ratingDots(props.views)}</span>
+            </div>
+            <div class="rating-item">
+              <span class="rating-label">Environment</span>
+              <span class="rating-stars" style="color:#5dd68c;">${ratingDots(props.env)}</span>
+            </div>
+          </div>
+
+          <span class="popup-tag ${tagClass}">${props.tag}</span>
+          ${notesHtml}
+        </div>
+      `;
+    }
+
+      map.on("load", () => {
+        map.addSource("pins", {
+          type: "geojson",
+          data: buildGeoJSON([])
+        });
+
+        map.addSource("valid-region", {
+          type: "geojson",
+          data: buildValidRegionGeoJSON(Number(daySlider.value))
+        });
+
+        map.addLayer({
+          id: "valid-region-fill",
+          source: "valid-region",
+          type: "fill",
+          paint: {
+            "fill-color": VALID_FILL
+          }
+        });
+
+        // ── Invisible hit-target layer (larger radius, transparent) ──
+        // This is what actually captures mouse/touch events, making
+        // pins much easier to click without making the visual larger.
+        ["Off-Campus", "On-Campus"].forEach(tag => {
+          const id = tag === "On-Campus" ? "pins-on" : "pins-off";
+          map.addLayer({
+            id: `${id}-hit`,
+            source: "pins",
+            type: "circle",
+            filter: ["==", ["get", "tag"], tag],
+            paint: {
+              "circle-radius": PIN_TOUCH_RADIUS,
+              "circle-opacity": 0,               // fully invisible
+              "circle-stroke-width": 0,
+            }
+          });
+        });
+
+        map.addLayer({
+          id: "pins-off",
+          source: "pins",
+          type: "circle",
+          filter: ["==", ["get", "tag"], "Off-Campus"],
+          paint: {
+            "circle-color": COLOR_OFF,
+            "circle-radius": PIN_RADIUS,
+            "circle-opacity": 0.9,
+            "circle-stroke-color": "rgba(255,255,255,0.6)",
+            "circle-stroke-width": 1.5,
+            "circle-blur": 0,
+          }
+        });
+
+        map.addLayer({
+          id: "pins-on",
+          source: "pins",
+          type: "circle",
+          filter: ["==", ["get", "tag"], "On-Campus"],
+          paint: {
+            "circle-color": COLOR_ON,
+            "circle-radius": PIN_RADIUS,
+            "circle-opacity": 0.9,
+            "circle-stroke-color": "rgba(255,255,255,0.6)",
+            "circle-stroke-width": 1.5,
+            "circle-blur": 0,
+          }
+        });
+      
+        // ── Hover glow layer (rendered on top, lights up on hover) ──
+        // We track the hovered feature id and use a filter to show
+        // a larger, blurred, semi-transparent circle only for that pin.
+        map.addLayer({
+          id: "pins-halo",
+          source: "pins",
+          type: "circle",
+          filter: ["==", ["get", "name"], ""],   // nothing shown initially
+          paint: {
+            "circle-color": [
+              "case",
+              ["==", ["get", "tag"], "On-Campus"], COLOR_ON,
+              COLOR_OFF
+            ],
+            "circle-radius": PIN_RADIUS + 8,
+            "circle-opacity": 0.3,
+            "circle-blur": 0.6,
+            "circle-stroke-width": 0,
+          }
+        });
+
+        // We use the hit layers for events so the clickable area is large,
+        // but the visual layers remain the right size.
+        const hitLayers = ["pins-off-hit", "pins-on-hit"];
+
+        hitLayers.forEach(layerId => {
+          map.on("mouseenter", layerId, (e) => {
+            map.getCanvas().style.cursor = "pointer";
+            const name = e.features[0].properties.name;
+            map.setFilter("pins-halo", ["==", ["get", "name"], name]);
+          });
+
+          map.on("mouseleave", layerId, () => {
+            map.getCanvas().style.cursor = "";
+            map.setFilter("pins-halo", ["==", ["get", "name"], ""]);
+          });
+
+          map.on("click", layerId, (e) => {
+            const props = e.features[0].properties;
+            new maplibregl.Popup({ offset: 16, maxWidth: "280px" })
+              .setLngLat(e.lngLat)
+              .setHTML(buildPopupHtml(props))
+              .addTo(map);
+          });
+        });
+
+        applyFilters();
+      });
+
+    /* ============================================================
+       Section 5 — SEARCH UI
+       ============================================================ */
+      const searchInput = document.getElementById("search");
+      const resetBtn = document.getElementById("resetBtn");
+      const showAllBtn = document.getElementById("showAllBtn");
+      const countLine = document.getElementById("countLine");
+
+      searchInput.addEventListener("input", applyFilters);
+
+      resetBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        showAll = false;
+        showAllBtn.textContent = "Show All Pins";
+        applyFilters();
+      });
+
+      showAllBtn.addEventListener("click", () => {
+        showAll = !showAll;
+        showAllBtn.textContent = showAll ? "Filter by Date" : "Show All Pins";
+        applyFilters();
+      });
+
+    /* ============================================================
+       Section 6 — DAY SLIDER
+       ============================================================ */
+      let showAll = false;
+      function applyFilters() {
+        const query = document.getElementById("search").value.trim().toLowerCase();
+        const day = Number(document.getElementById("daySlider").value);
+
+        const visible = PINS.filter(pin => {
+          const matchesSearch =
+            query === "" ||
+            pin.name.toLowerCase().includes(query) ||
+            (pin.notes || "").toLowerCase().includes(query);
+
+          const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
+          const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
+          const matchesDay = showAll ? true : (matchesSpring || matchesFall);
+
+          return matchesSearch && matchesDay;
+        });
+
+        const source = map.getSource("pins");
+        if (source) source.setData(buildGeoJSON(visible));
+
+        const n = visible.length;
+        document.getElementById("countLine").textContent =
+          `Showing ${n} pin${n === 1 ? "" : "s"} of ${PINS.length}`;
+      }
+
+      const daySlider = document.getElementById("daySlider");
+      const dayNum = document.getElementById("dayNum");
+      const dateDisplay = document.getElementById("dateDisplay");
+      const todayBtn = document.getElementById("todayBtn");
+
+      const TIMEZONE = "America/Los_Angeles";
+      const SLIDER_YEAR = 2026; // hard-set to 2026 for now
+
+      function isLeapYear(year) {
+        return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+      }
+      const MAX_DOY = isLeapYear(SLIDER_YEAR) ? 366 : 365;
+      daySlider.max = String(MAX_DOY);
+
+      // convert doy to formatted PST date
+      function doyToDateStr(doy, year = SLIDER_YEAR) {
+        // 01/01 in PST
+        const d = new Date(SLIDER_YEAR, 0, 1);
+        d.setDate(Number(doy));
+        return d.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+      }
+
+      // get today's PST doy
+      function getTodayDOY() {
+        const now = new Date();
+        const start = new Date(SLIDER_YEAR, 0, 1);
+        return Math.floor((now - start) / 86400000) + 1;
+      }
+
+      function setDay(doy) {
+        const v = Math.min(MAX_DOY, Math.max(1, Number(doy)));
+        daySlider.value = v;
+        dayNum.textContent = v;
+        dateDisplay.textContent = doyToDateStr(v);
+
+        if (map.isStyleLoaded()) {
+          const regionSource = map.getSource("valid-region");
+          if (regionSource) {
+            regionSource.setData(buildValidRegionGeoJSON(v));
+          }
+          applyFilters();
+        }
+      }
+
+      daySlider.addEventListener("input", (e) => {
+        setDay(e.target.value);
+      });
+
+      todayBtn.addEventListener("click", () => {
+        setDay(getTodayDOY());
+      });
+
+      // initialize
+      setDay(1);
+
+    /* ============================================================
+       Section 7 — HELPERS + BOOT
+       ============================================================ */
+      function degToRad(deg) {
+        return deg * Math.PI / 180;
+      }
+
+      function radToDeg(rad) {
+        return rad * 180 / Math.PI;
+      }
+
+      // bearing from observer to target from true north
+      function bearingDeg(fromLng, fromLat, toLng, toLat) {
+        const φ1 = degToRad(fromLat);
+        const φ2 = degToRad(toLat);
+        const λ1 = degToRad(fromLng);
+        const λ2 = degToRad(toLng);
+
+        const y = Math.sin(λ2 - λ1) * Math.cos(φ2);
+        const x =
+          Math.cos(φ1) * Math.sin(φ2) -
+          Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1);
+
+        return (radToDeg(Math.atan2(y, x)) + 360) % 360;
+      }
+
+      // smallest signed angular difference a-b in (-180, 180]
+      function signedAngleDiff(a, b) {
+        return ((a - b + 540) % 360) - 180;
+      }
+
+      function approxDeclinationDeg(dayNum, daysThisYear) {
+        return radToDeg(
+          0.006918
+          - 0.399912 * Math.cos((2 * Math.PI * (dayNum - 1)) / daysThisYear)
+          + 0.070257 * Math.sin((2 * Math.PI * (dayNum - 1)) / daysThisYear)
+          - 0.006758 * Math.cos((4 * Math.PI * (dayNum - 1)) / daysThisYear)
+          + 0.000907 * Math.sin((4 * Math.PI * (dayNum - 1)) / daysThisYear)
+          - 0.002697 * Math.cos((6 * Math.PI * (dayNum - 1)) / daysThisYear)
+          + 0.00148  * Math.sin((6 * Math.PI * (dayNum - 1)) / daysThisYear)
+        );
+      }
+
+      function approxSunsetAzimuthDeg(latDeg, dayNum, year = SLIDER_YEAR) {
+        const daysThisYear = isLeapYear(year) ? 366 : 365;
+        const declDeg = approxDeclinationDeg(dayNum, daysThisYear);
+        const val = Math.sin(degToRad(declDeg)) / Math.cos(degToRad(latDeg));
+        const clamped = Math.max(-1, Math.min(1, val));
+        return ((360 - radToDeg(Math.acos(clamped))) % 360) + 0.5;
+      }
+
+      function normalize360(angle) {
+        return ((angle % 360) + 360) % 360;
+      }
+
+      function angularWidth(a, b) {
+        return Math.abs(signedAngleDiff(a, b));
+      }
+
+      function isAngleWithinBand(angle, center, widthDeg) {
+        return Math.abs(signedAngleDiff(angle, center)) <= widthDeg / 2;
+      }
+
+      function getBridgeBounds(lng, lat) {
+        const thetaMid = bearingDeg(lng, lat, MIDPOINT[0], MIDPOINT[1]);
+        const thetaNorth = bearingDeg(lng, lat, NORTH_TOWER[0], NORTH_TOWER[1]);
+        const thetaSouth = bearingDeg(lng, lat, SOUTH_TOWER[0], SOUTH_TOWER[1]);
+
+        const bridgeDelta = angularWidth(thetaSouth, thetaNorth);
+        const allowedDelta = bridgeDelta / 3;
+
+        const center = thetaMid;
+        const upper = normalize360(center + allowedDelta / 2);
+        const lower = normalize360(center - allowedDelta / 2);
+
+        return {
+          thetaMid,
+          thetaNorth,
+          thetaSouth,
+          bridgeDelta,
+          allowedDelta,
+          center,
+          upper,
+          lower
+        };
+      }
+
+      function isValidObserverForDay(lng, lat, dayNum) {
+        const sunAz = approxSunsetAzimuthDeg(lat, dayNum);
+        const bounds = getBridgeBounds(lng, lat);
+        return isAngleWithinBand(sunAz, bounds.center, bounds.allowedDelta);
+      }
+
+      function cellPolygon(lng, lat, step) {
+        return [[
+          [lng, lat],
+          [lng + step, lat],
+          [lng + step, lat + step],
+          [lng, lat + step],
+          [lng, lat]
+        ]];
+      }
+
+      function buildValidRegionGeoJSON(dayNum) {
+        if (dayNum >= 83 && dayNum <= 261) {
+          return {
+            type: "FeatureCollection",
+            features: []
+          };
+        }
+        const features = [];
+        for (let lng = GRID_LNG_MIN; lng < GRID_LNG_MAX; lng += GRID_STEP_DEG) {
+          for (let lat = GRID_LAT_MIN; lat < GRID_LAT_MAX; lat += GRID_STEP_DEG) {
+            const centerLng = lng + GRID_STEP_DEG / 2;
+            const centerLat = lat + GRID_STEP_DEG / 2;
+            if (isValidObserverForDay(centerLng, centerLat, dayNum)) {
+              features.push({
+                type: "Feature",
+                geometry: {
+                  type: "Polygon",
+                  coordinates: cellPolygon(lng, lat, GRID_STEP_DEG)
+                },
+                properties: {}
+              });
+            }
+          }
+        }
+        return {
+          type: "FeatureCollection",
+          features
+        };
+      }
+      
+  </script>
+</body>
+</html>
