@@ -222,8 +222,8 @@
       box-shadow: 0 12px 28px rgba(40, 30, 20, 0.16) !important;
       font-family: "DM Sans", sans-serif !important;
       color: #1f2328 !important;
-      min-width: 240px;
-      max-width: 280px;
+      min-width: 260px;
+      max-width: 300px;
       overflow: hidden;
     }
   
@@ -463,6 +463,12 @@
 
       let clickedPopup = null;
       let clickedLngLat = null;
+      let suppressClickedPopupClose = false;
+
+      let selectedPinPopup = null;
+      let selectedPinLngLat = null;
+      let selectedPinProps = null;
+      let suppressSelectedPinClose = false;
 
     /* ============================================================
        Section 3 — MAP INIT
@@ -529,11 +535,8 @@
           : `${doyToDateStr(faStart)} – ${doyToDateStr(faEnd)}`;
         const samePeriod = spStart === faStart && spEnd === faEnd;
 
-        const spMid = Math.round((spStart + spEnd) / 2);
-        const faMid = Math.round((faStart + faEnd) / 2);
-
-        const springSunset = sunsetLocalTime(spMid, Number(props.lat), Number(props.lng));
-        const fallSunset = sunsetLocalTime(faMid, Number(props.lat), Number(props.lng));
+        const currentDay = Number(daySlider.value);
+        const todaySunset = sunsetLocalTime(currentDay, Number(props.lat), Number(props.lng));
 
         const dateHtml = samePeriod
           ? `<div class="popup-row"><strong>GGH Dates:</strong> ${springLine}</div>`
@@ -545,7 +548,7 @@
           : "";
 
         const notesHtml = props.notes
-          ? `<div class="popup-row" style="margin-top:6px; color:rgba(255,255,255,0.75);">${props.notes}</div>`
+          ? `<div class="popup-row" style="margin-top:6px">${props.notes}</div>`
           : "";
 
         return `
@@ -553,6 +556,8 @@
           <div class="popup-body">
             <div class="popup-name">${props.name}</div>
             <div class="popup-row"><strong>Coordinates:</strong> ${Number(props.lat).toFixed(5)}, ${Number(props.lng).toFixed(5)}</div>
+            <div class="popup-row"><strong>Today's Date:</strong> ${doyToDateStr(currentDay)}</div>
+            <div class="popup-row"><strong>Sunset Time:</strong> ${todaySunset}</div>
             ${dateHtml}
             <div class="popup-ratings">
               <div class="rating-item">
@@ -698,8 +703,8 @@
             e.preventDefault();
             e.originalEvent.stopPropagation();
 
+            // clear dropped-pin popup
             clickedLngLat = null;
-
             const clickedSource = map.getSource("clicked-point");
             if (clickedSource) {
               clickedSource.setData({
@@ -707,20 +712,34 @@
                 features: []
               });
             }
-
             if (clickedPopup) {
               clickedPopup.remove();
               clickedPopup = null;
             }
 
-            const props = e.features[0].properties;
-            new maplibregl.Popup({ offset: 16, maxWidth: "280px" })
-              .setLngLat(e.lngLat)
-              .setHTML(buildPopupHtml(props))
+            // clear previous selected red/blue pin popup
+            if (selectedPinPopup) {
+              suppressSelectedPinClose = true;
+              selectedPinPopup.remove();
+              suppressSelectedPinClose = false;
+            }
+
+            selectedPinLngLat = { lng: e.lngLat.lng, lat: e.lngLat.lat };
+            selectedPinProps = { ...e.features[0].properties };
+
+            selectedPinPopup = new maplibregl.Popup({ offset: 16, maxWidth: "280px" })
+              .setLngLat([selectedPinLngLat.lng, selectedPinLngLat.lat])
+              .setHTML(buildPopupHtml(selectedPinProps))
               .addTo(map);
+
+            selectedPinPopup.on("close", () => {
+              if (suppressSelectedPinClose) return;
+              selectedPinPopup = null;
+              selectedPinLngLat = null;
+              selectedPinProps = null;
+            });
           });
 
-          let clickedPopup = null;
           map.on("click", (e) => {
             const hitFeatures = map.queryRenderedFeatures(e.point, {
               layers: ["pins-off-hit", "pins-on-hit"]
@@ -831,6 +850,7 @@
           }
           applyFilters();
           updateClickedSunsetPopup();
+          updateSelectedPinPopup();
         }
       }
 
@@ -1160,6 +1180,11 @@
         const { lng, lat } = clickedLngLat;
         const day = Number(daySlider.value);
         const sunsetStr = sunsetLocalTime(day, lat, lng, SLIDER_YEAR);
+        if (clickedPopup) {
+          suppressClickedPopupClose = true;
+          clickedPopup.remove();
+          suppressClickedPopupClose = false;
+        }
         const clickedSource = map.getSource("clicked-point");
         if (clickedSource) {
           clickedSource.setData({
@@ -1176,18 +1201,50 @@
             ]
           });
         }
-        if (clickedPopup) clickedPopup.remove();
+
         clickedPopup = new maplibregl.Popup({ offset: 14, maxWidth: "240px" })
           .setLngLat([lng, lat])
           .setHTML(`
             <div class="popup-body">
               <div class="popup-name">Dropped Pin</div>
               <div class="popup-row"><strong>Coordinates:</strong> ${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
-              <div class="popup-row"><strong>Date:</strong> ${doyToDateStr(day)}</div>
-              <div class="popup-row"><strong>Sunset:</strong> ${sunsetStr}</div>
+              <div class="popup-row"><strong>Today's Date:</strong> ${doyToDateStr(day)}</div>
+              <div class="popup-row"><strong>Sunset Time:</strong> ${sunsetStr}</div>
             </div>
           `)
           .addTo(map);
+
+        clickedPopup.on("close", () => {
+          if (suppressClickedPopupClose) return;
+          clickedLngLat = null;
+          const clickedSource = map.getSource("clicked-point");
+          if (clickedSource) {
+            clickedSource.setData({
+              type: "FeatureCollection",
+              features: []
+            });
+          }
+          clickedPopup = null;
+        });
+      }
+
+      function updateSelectedPinPopup() {
+        if (!selectedPinLngLat || !selectedPinProps) return;
+        if (selectedPinPopup) {
+          suppressSelectedPinClose = true;
+          selectedPinPopup.remove();
+          suppressSelectedPinClose = false;
+        }
+        selectedPinPopup = new maplibregl.Popup({ offset: 16, maxWidth: "280px" })
+          .setLngLat([selectedPinLngLat.lng, selectedPinLngLat.lat])
+          .setHTML(buildPopupHtml(selectedPinProps))
+          .addTo(map);
+        selectedPinPopup.on("close", () => {
+          if (suppressSelectedPinClose) return;
+          selectedPinPopup = null;
+          selectedPinLngLat = null;
+          selectedPinProps = null;
+        });
       }
   </script>
 </body>
