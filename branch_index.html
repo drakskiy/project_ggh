@@ -14,222 +14,295 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { 
-      height: 100%; 
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+  
+    html, body {
+      height: 100%;
       margin: 0;
       font-family: "DM Sans", sans-serif;
-      background: #0e1117;
-      color: #f0f0ee; }
+      background: #ece8e1;
+      color: #1f2328;
+    }
+  
     #map {
-      position : absolute;
-      inset : 0 }
-
+      position: absolute;
+      inset: 0;
+    }
+  
     .panel {
       position: absolute;
-      top: 16px;
-      left: 16px;
+      top: 18px;
+      left: 18px;
       z-index: 1000;
-      background: rgba(14, 17, 23, 0.88);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(250, 248, 244, 0.86);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       padding: 18px 16px 14px;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid rgba(70, 60, 54, 0.12);
       border-radius: 14px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
-      max-width: 360px;
+      box-shadow: 0 8px 24px rgba(40, 30, 20, 0.12);
+      max-width: 340px;
     }
+  
     .panel-header {
       display: flex;
       align-items: baseline;
       gap: 10px;
       margin-bottom: 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+      border-bottom: 1px solid rgba(70, 60, 54, 0.08);
       padding-bottom: 12px;
     }
-
+  
     .panel-title {
       font-family: "DM Mono", monospace;
       font-size: 15px;
       font-weight: 500;
       letter-spacing: 0.04em;
-      color: #f0f0ee;
+      color: #1f2328;
     }
-
+  
     .panel-subtitle {
       font-size: 11px;
-      color: rgba(255,255,255,0.35);
-      font-weight: 300;
+      color: rgba(31, 35, 40, 0.52);
+      font-weight: 400;
     }
-    
+  
     .search-row {
       display: flex;
       gap: 6px;
       margin-bottom: 14px;
     }
-
+  
     input[type="search"] {
       flex: 1;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.06);
-      color: #f0f0ee;
+      padding: 9px 11px;
+      border-radius: 9px;
+      border: 1px solid rgba(70, 60, 54, 0.10);
+      background: rgba(255,255,255,0.72);
+      color: #1f2328;
       font-family: "DM Sans", sans-serif;
       font-size: 12px;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, background 0.15s;
     }
-    input[type="search"]::placeholder { color: rgba(255,255,255,0.3); }
-    input[type="search"]:focus { border-color: rgba(255,255,255,0.25); }
-    input[type="search"]::-webkit-search-cancel-button { display: none; }
-
+  
+    input[type="search"]::placeholder {
+      color: rgba(31, 35, 40, 0.38);
+    }
+  
+    input[type="search"]:focus {
+      border-color: rgba(111, 143, 184, 0.65);
+      background: rgba(255,255,255,0.92);
+    }
+  
+    input[type="search"]::-webkit-search-cancel-button {
+      display: none;
+    }
+  
     .btn {
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
+      border: 1px solid rgba(70, 60, 54, 0.10);
+      border-radius: 9px;
       padding: 8px 11px;
       cursor: pointer;
       font-family: "DM Mono", monospace;
       font-size: 11px;
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.6);
-      transition: background 0.15s, color 0.15s;
+      background: rgba(255,255,255,0.7);
+      color: rgba(31, 35, 40, 0.72);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
       white-space: nowrap;
     }
-    .btn:hover { background: rgba(255,255,255,0.12); color: #f0f0ee; }
-
-    /* slider */
+  
+    .btn:hover {
+      background: rgba(255,255,255,0.95);
+      color: #1f2328;
+      border-color: rgba(70, 60, 54, 0.18);
+    }
+  
     .slider-section {
       margin-bottom: 14px;
     }
-
+  
     .slider-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 8px;
     }
-
+  
     .slider-label {
       font-family: "DM Mono", monospace;
       font-size: 12px;
-      color: rgba(255,255,255,0.55);
+      color: rgba(31, 35, 40, 0.58);
     }
-
+  
     .slider-date {
       font-family: "DM Mono", monospace;
       font-size: 13px;
       font-weight: 500;
-      color: #f0f0ee;
+      color: #1f2328;
       letter-spacing: 0.03em;
     }
-
+  
     input[type="range"] {
       width: 100%;
       height: 3px;
       -webkit-appearance: none;
       appearance: none;
-      background: rgba(255,255,255,0.12);
-      border-radius: 2px;
+      background: rgba(70, 60, 54, 0.16);
+      border-radius: 999px;
       outline: none;
       cursor: pointer;
     }
+  
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
       border-radius: 50%;
-      background: #f0f0ee;
-      border: 2px solid #0e1117;
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+      background: #f7f4ee;
+      border: 1.5px solid rgba(70, 60, 54, 0.55);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
       cursor: pointer;
     }
+  
     input[type="range"]::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
       border-radius: 50%;
-      background: #f0f0ee;
-      border: 2px solid #0e1117;
+      background: #f7f4ee;
+      border: 1.5px solid rgba(70, 60, 54, 0.55);
       cursor: pointer;
     }
-
-    /* legend */
+  
     .legend {
       display: flex;
       gap: 16px;
       margin-bottom: 12px;
       padding: 10px 10px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.5);
+      border-radius: 9px;
+      border: 1px solid rgba(70, 60, 54, 0.08);
     }
-
+  
     .legend-item {
       display: flex;
       align-items: center;
       gap: 7px;
       font-size: 11px;
-      color: rgba(255,255,255,0.6);
+      color: rgba(31, 35, 40, 0.68);
     }
-
+  
     .legend-dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
-      border: 1.5px solid rgba(255,255,255,0.25);
+      border: 1px solid rgba(255,255,255,0.75);
     }
-
-    .legend-dot.on-campus  { background: #5b9cf6; }
-    .legend-dot.off-campus { background: #f76b6b; }
-
-    /* count line */
+  
+    .legend-dot.on-campus  { background: #6f8fb8; }
+    .legend-dot.off-campus { background: #b87a6f; }
+  
     .count-line {
       font-family: "DM Mono", monospace;
       font-size: 10px;
-      color: rgba(255,255,255,0.28);
+      color: rgba(31, 35, 40, 0.45);
       letter-spacing: 0.03em;
     }
-
-    /* popup */
+  
     .maplibregl-popup-content {
-      background: rgba(14, 17, 23, 0.97) !important;
-      border: 1px solid rgba(255,255,255,0.1) !important;
-      border-radius: 10px !important;
-      padding: 14px 16px !important;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+      background: rgba(250, 248, 244, 0.97) !important;
+      border: 1px solid rgba(70, 60, 54, 0.10) !important;
+      border-radius: 12px !important;
+      padding: 0 !important;
+      box-shadow: 0 12px 28px rgba(40, 30, 20, 0.16) !important;
       font-family: "DM Sans", sans-serif !important;
-      color: #f0f0ee !important;
-      min-width: 220px;
+      color: #1f2328 !important;
+      min-width: 240px;
+      max-width: 280px;
+      overflow: hidden;
     }
-
-    .maplibregl-popup-tip { display: none !important; }
+  
+    .maplibregl-popup-tip {
+      display: none !important;
+    }
+  
     .maplibregl-popup-close-button {
-      color: rgba(255,255,255,0.35) !important;
+      color: rgba(31, 35, 40, 0.45) !important;
       font-size: 16px !important;
       padding: 4px 8px !important;
     }
-    .maplibregl-popup-close-button:hover { color: #f0f0ee !important; }
-
+  
+    .maplibregl-popup-close-button:hover {
+      color: #1f2328 !important;
+    }
+  
+    .popup-photo {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      display: block;
+      border-bottom: 1px solid rgba(70, 60, 54, 0.08);
+    }
+  
+    .popup-body {
+      padding: 13px 15px 14px;
+    }
+  
     .popup-name {
       font-weight: 600;
       font-size: 13px;
       margin-bottom: 8px;
       line-height: 1.3;
     }
-
+  
     .popup-row {
       font-size: 11px;
-      color: rgba(255,255,255,0.5);
+      color: rgba(31, 35, 40, 0.62);
       margin-bottom: 4px;
       line-height: 1.4;
     }
-
+  
     .popup-row strong {
-      color: rgba(255,255,255,0.75);
-      font-weight: 500;
+      color: rgba(31, 35, 40, 0.82);
+      font-weight: 600;
     }
-
+  
+    .popup-ratings {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 8px 0 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.55);
+      border-radius: 8px;
+      border: 1px solid rgba(70, 60, 54, 0.07);
+    }
+  
+    .rating-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+  
+    .rating-label {
+      font-family: "DM Mono", monospace;
+      font-size: 10px;
+      color: rgba(31, 35, 40, 0.50);
+      letter-spacing: 0.03em;
+    }
+  
+    .rating-stars {
+      font-size: 15px;
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+  
     .popup-tag {
       display: inline-block;
       margin-top: 8px;
@@ -239,11 +312,24 @@
       font-family: "DM Mono", monospace;
       letter-spacing: 0.04em;
     }
-    .popup-tag.on-campus  { background: rgba(91,156,246,0.15); color: #5b9cf6; border: 1px solid rgba(91,156,246,0.3); }
-    .popup-tag.off-campus { background: rgba(247,107,107,0.15); color: #f76b6b; border: 1px solid rgba(247,107,107,0.3); }
-
-    /* maplibre attribution */
-    .maplibregl-ctrl-attrib { font-size: 10px !important; }
+  
+    .popup-tag.on-campus {
+      background: rgba(111,143,184,0.12);
+      color: #5f7fa8;
+      border: 1px solid rgba(111,143,184,0.22);
+    }
+  
+    .popup-tag.off-campus {
+      background: rgba(184,122,111,0.12);
+      color: #a76c61;
+      border: 1px solid rgba(184,122,111,0.22);
+    }
+  
+    /* attribution */
+    .maplibregl-ctrl-attrib {
+      font-size: 10px !important;
+      color: rgba(31, 35, 40, 0.5) !important;
+    }
   </style>
 </head>
 
@@ -302,6 +388,7 @@
        Section 1 — PINS LIST
        Format: { 
           name: string,
+          photo: string,
           lat: int,
           lng: int,
           gghStartSp: int,
@@ -315,7 +402,7 @@
           notes: string
        ============================================================ */
        const PINS = [
-        { name: "Albany Bulb", lat: 37.8888190128995, lng: -122.327415343957, gghStartSp: 346, gghEndSp: 365, gghStartFa: 346, gghEndFa: 365, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+       { name: "Albany Bulb", photo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/20221009_123157_HDR.jpg", lat: 37.8888190128995, lng: -122.327415343957, gghStartSp: 346, gghEndSp: 365, gghStartFa: 346, gghEndFa: 365, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Indian Rock Park", lat: 37.8922186297827, lng: -122.273079038403, gghStartSp: 23, gghEndSp: 26, gghStartFa: 320, gghEndFa: 322, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Grotto Rock Park", lat: 37.8934271576909, lng: -122.268772249069, gghStartSp: 23, gghEndSp: 26, gghStartFa: 319, gghEndFa: 322, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Seaview Trail Vista", lat: 37.8941055046049, lng: -122.234256937359, gghStartSp: 32, gghEndSp: 34, gghStartFa: 312, gghEndFa: 313, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
@@ -328,34 +415,41 @@
         { name: "Grizzly Peak (main pullout)", lat: 37.8812286530182, lng: -122.231515513766, gghStartSp: 41, gghEndSp: 42, gghStartFa: 303, gghEndFa: 304, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Big C", lat: 37.8745311105514, lng: -122.249589757626, gghStartSp: 42, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Brickyard Cove (Berkeley Marina)", lat: 37.8598142764415, lng: -122.305735651139, gghStartSp: 43, gghEndSp: 46, gghStartFa: 300, gghEndFa: 302, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Picnic View Ridge", lat: 37.871545273863, lng: -122.22968464953, gghStartSp: 47, gghEndSp: 49, gghStartFa: 296, gghEndFa: 298, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Picnic View Ridge", lat: 37.871545273863, lng: -122.22968464953, gghStartSp: 47, gghEndSp: 49, gghStartFa: 296, gghEndFa: 298, tag: "Off-Campus", access: 3, views: 5, env: 5, notes: "" },
         { name: "Grizzly Peak (giant log pullout)", lat: 37.8722073897154, lng: -122.220588331848, gghStartSp: 48, gghEndSp: 49, gghStartFa: 296, gghEndFa: 297, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Clark Kerr Track", lat: 37.8647545004258, lng: -122.24647976126, gghStartSp: 49, gghEndSp: 51, gghStartFa: 294, gghEndFa: 296, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Stonewall-Panoramic Trail Vista", lat: 37.8655644745048, lng: -122.240581102592, gghStartSp: 50, gghEndSp: 51, gghStartFa: 294, gghEndFa: 296, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Grizzly Peak (KPFA Tower pullout)", lat: 37.8651820930087, lng: -122.222135855337, gghStartSp: 52, gghEndSp: 53, gghStartFa: 292, gghEndFa: 293, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Point Emery", lat: 37.8457293526268, lng: -122.302198015687, gghStartSp: 56, gghEndSp: 58, gghStartFa: 287, gghEndFa: 289, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Emeryville Marina Park", lat: 37.8424286024585, lng: -122.314367444065, gghStartSp: 57, gghEndSp: 59, gghStartFa: 285, gghEndFa: 288, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Point Emery", photo: "https://www.emeryville.org/files/assets/city/v/1/community-services/images/parks/point-emery.png?dimension=pageimage&w=480",lat: 37.8457293526268, lng: -122.302198015687, gghStartSp: 56, gghEndSp: 58, gghStartFa: 287, gghEndFa: 289, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Emeryville Marina Park", photo: "https://www.emeryville.org/files/assets/city/v/2/community-services/images/parks/marina-park.jpeg?dimension=pageimage&w=480", lat: 37.8424286024585, lng: -122.314367444065, gghStartSp: 57, gghEndSp: 59, gghStartFa: 285, gghEndFa: 288, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Mt Diablo Summit Visitor Center", lat: 37.8818042559832, lng: -121.914290020331, gghStartSp: 63, gghEndSp: 63, gghStartFa: 282, gghEndFa: 282, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Treasure Island NW", lat: 37.8303856995793, lng: -122.377617269266, gghStartSp: 61, gghEndSp: 65, gghStartFa: 279, gghEndFa: 284, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Alcatraz Viewpoint (Barker Beach)", lat: 37.8268929527263, lng: -122.424130452215, gghStartSp: 55, gghEndSp: 64, gghStartFa: 281, gghEndFa: 290, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Treasure Island NW", lat: 37.8303856995793, lng: -122.377617269266, gghStartSp: 61, gghEndSp: 65, gghStartFa: 279, gghEndFa: 284, tag: "Off-Campus", access: 2, views: 5, env: 5, notes: "$8.50 toll is collected heading westbound on the Bay Bridge to Treasure Island." },
+        { name: "Alcatraz Viewpoint (Baker Beach)", lat: 37.8268929527263, lng: -122.424130452215, gghStartSp: 55, gghEndSp: 64, gghStartFa: 281, gghEndFa: 290, tag: "Off-Campus", access: 1, views: 5, env: 5, notes: "The Alcatraz ferry is the only authorized way to reach the island. Adult tickets sell for roughly $45-60 and can sell out 90 days in advance." },
         { name: "Joaquin Miller Park (Lookout Point)", lat: 37.8128316018722, lng: -122.194258955209, gghStartSp: 81, gghEndSp: 82, gghStartFa: 262, gghEndFa: 263, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Evans Hall F10 Balcony", lat: 37.8734336917814, lng: -122.258000827204, gghStartSp: 42, gghEndSp: 43, gghStartFa: 302, gghEndFa: 304, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Graduate Theological Union Balcony", lat: 37.8754152586105, lng: -122.262049887252, gghStartSp: 39, gghEndSp: 41, gghStartFa: 304, gghEndFa: 306, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Ridge Path", lat: 37.8764686028796, lng: -122.263984471867, gghStartSp: 38, gghEndSp: 40, gghStartFa: 305, gghEndFa: 307, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Cal Memorial Stadium Concourse", lat: 37.8704318904843, lng: -122.251501483844, gghStartSp: 45, gghEndSp: 46, gghStartFa: 299, gghEndFa: 300, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Cal Memorial Stadium Concourse", lat: 37.8704318904843, lng: -122.251501483844, gghStartSp: 45, gghEndSp: 46, gghStartFa: 299, gghEndFa: 300, tag: "On-Campus", access: 2, views: 5, env: 4, notes: "" },
         { name: "Top of Campanile", lat: 37.8720578106133, lng: -122.25787494319, gghStartSp: 43, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Tan Kee Hall 775 Balcony", lat: 37.8730803891031, lng: -122.256571043642, gghStartSp: 42, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" }
+        { name: "Tan Kee Hall 775 Balcony", lat: 37.8730803891031, lng: -122.256571043642, gghStartSp: 42, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "On-Campus", access: 3, views: 3, env: 5, notes: "" }
       ];
 
     /* ============================================================
        Section 2 — MAP SETTINGS
        ============================================================ */
-      const MAPTILER_STYLE = "https://api.maptiler.com/maps/topo-v4/style.json?key=cv2lryclk9tg1QR6KCLy";
+      const MAPTILER_STYLE = "https://api.maptiler.com/maps/voyager-v2/style.json?key=cv2lryclk9tg1QR6KCLy";
       const MAP_CENTER = [-122.2730, 37.8715];
       const START_ZOOM = 11.4;
 
-      const COLOR_ON  = "#5b9cf6";
-      const COLOR_OFF = "#f76b6b";
+      const COLOR_ON   = "#6f8fb8";
+      const COLOR_OFF  = "#b87a6f";
+      const COLOR_BAND = "#c7ab4b";
+      const COLOR_TEXT = "#1f2328";
+      const COLOR_PANEL_BG = "rgba(250, 248, 244, 0.86)";
+      const COLOR_PANEL_BORDER = "rgba(60, 52, 46, 0.14)";
+
+      const PIN_RADIUS = 8; 
+      const PIN_TOUCH_RADIUS = 12;
 
       const MIDPOINT = [-122.4785691240060, 37.8198754226465];
       const NORTH_TOWER = [-122.4792559011720, 37.8256669371344];
@@ -365,7 +459,7 @@
       const GRID_LNG_MAX = -121.85;
       const GRID_LAT_MIN = 37.78;
       const GRID_LAT_MAX = 37.93;
-      const GRID_STEP_DEG = 0.001;
+      const GRID_STEP_DEG = 0.005;
 
     /* ============================================================
        Section 3 — MAP INIT
@@ -376,7 +470,7 @@
       style: MAPTILER_STYLE,
       center: MAP_CENTER,
       zoom: START_ZOOM,
-      minZoom: 9,
+      minZoom: 10,
       attributionControl: true,
     });
 
@@ -394,20 +488,81 @@
             geometry: { type: "Point", coordinates: [pin.lng, pin.lat] },
             properties: {
               name: pin.name,
-              notes: pin.notes || "",
-              tag: pin.tag,
+              photo: pin.photo || "",
+              lat: pin.lat,
+              lng: pin.lng,
               gghStartSp: pin.gghStartSp,
               gghEndSp: pin.gghEndSp,
               gghStartFa: pin.gghStartFa,
               gghEndFa: pin.gghEndFa,
+              tag: pin.tag,
               access: pin.access,
               views: pin.views,
               env: pin.env,
-              lat: pin.lat,
-              lng: pin.lng,
+              notes: pin.notes || ""
             }
           }))
         };
+      }
+
+      function ratingDots(score, max = 5) {
+        const filled = Math.round(score);
+        return "●".repeat(filled) + "○".repeat(max - filled);
+      }
+
+      function buildPopupHtml(props) {
+        const tagClass = props.tag === "On-Campus" ? "on-campus" : "off-campus";
+
+        const spStart = Number(props.gghStartSp);
+        const spEnd   = Number(props.gghEndSp);
+        const faStart = Number(props.gghStartFa);
+        const faEnd   = Number(props.gghEndFa);
+
+        const springLine = spStart === spEnd
+          ? doyToDateStr(spStart)
+          : `${doyToDateStr(spStart)} – ${doyToDateStr(spEnd)}`;
+        const fallLine = faStart === faEnd
+          ? doyToDateStr(faStart)
+          : `${doyToDateStr(faStart)} – ${doyToDateStr(faEnd)}`;
+        const samePeriod = spStart === faStart && spEnd === faEnd;
+
+        const dateHtml = samePeriod
+          ? `<div class="popup-row"><strong>GGH Dates:</strong> ${springLine}</div>`
+          : `<div class="popup-row"><strong>Spring Dates:</strong> ${springLine}</div>
+            <div class="popup-row"><strong>Fall Dates:</strong> ${fallLine}</div>`;
+
+        const photoHtml = props.photo
+          ? `<img class="popup-photo" src="${props.photo}" alt="${props.name}" onerror="this.style.display='none'" />`
+          : "";
+
+        const notesHtml = props.notes
+          ? `<div class="popup-row" style="margin-top:6px; color:rgba(255,255,255,0.75);">${props.notes}</div>`
+          : "";
+
+        return `
+          ${photoHtml}
+          <div class="popup-body">
+            <div class="popup-name">${props.name}</div>
+            <div class="popup-row"><strong>Coordinates:</strong> ${Number(props.lat).toFixed(5)}, ${Number(props.lng).toFixed(5)}</div>
+            ${dateHtml}
+            <div class="popup-ratings">
+              <div class="rating-item">
+                <span class="rating-label">Accessibility</span>
+                <span class="rating-stars" style="color:#5b9cf6;">${ratingDots(props.access)}</span>
+              </div>
+              <div class="rating-item">
+                <span class="rating-label">Views</span>
+                <span class="rating-stars" style="color:#f5c842;">${ratingDots(props.views)}</span>
+              </div>
+              <div class="rating-item">
+                <span class="rating-label">Environment</span>
+                <span class="rating-stars" style="color:#5dd68c;">${ratingDots(props.env)}</span>
+              </div>
+            </div>
+            <span class="popup-tag ${tagClass}">${props.tag}</span>
+            ${notesHtml}
+          </div>
+        `;
       }
 
       map.on("load", () => {
@@ -426,8 +581,8 @@
           source: "valid-region",
           type: "fill",
           paint: {
-            "fill-color": "#FFD700",
-            "fill-opacity": 0.35
+            "fill-color": COLOR_BAND,
+            "fill-opacity": 0.22
           }
         });
 
@@ -438,10 +593,10 @@
           filter: ["==", ["get", "tag"], "Off-Campus"],
           paint: {
             "circle-color": COLOR_OFF,
-            "circle-radius": 7,
-            "circle-opacity": 0.9,
-            "circle-stroke-color": "rgba(255,255,255,0.6)",
-            "circle-stroke-width": 1.5,
+            "circle-radius": 6.5,
+            "circle-opacity": 0.62,
+            "circle-stroke-color": "rgba(255,255,255,0.78)",
+            "circle-stroke-width": 1.1
           }
         });
 
@@ -452,68 +607,68 @@
           filter: ["==", ["get", "tag"], "On-Campus"],
           paint: {
             "circle-color": COLOR_ON,
-            "circle-radius": 7,
-            "circle-opacity": 0.9,
-            "circle-stroke-color": "rgba(255,255,255,0.6)",
-            "circle-stroke-width": 1.5,
+            "circle-radius": 6.5,
+            "circle-opacity": 0.66,
+            "circle-stroke-color": "rgba(255,255,255,0.78)",
+            "circle-stroke-width": 1.1
           }
         });
 
-        ["pins-off", "pins-on"].forEach(layerId => {
-          map.on("mouseenter", layerId, () => map.getCanvas().style.cursor = "pointer");
-          map.on("mouseleave", layerId, () => map.getCanvas().style.cursor = "");
+        map.addLayer({
+          id: "pins-halo",
+          source: "pins",
+          type: "circle",
+          filter: ["==", ["get", "name"], ""],
+          paint: {
+            "circle-color": [
+              "case",
+              ["==", ["get", "tag"], "On-Campus"], COLOR_ON,
+              COLOR_OFF
+            ],
+            "circle-radius": PIN_RADIUS + 6,
+            "circle-opacity": 0.16,
+            "circle-blur": 0.85,
+            "circle-stroke-width": 0
+          }
+        });
+
+        // captures mouse/touch events, making pins much easier to click
+        ["Off-Campus", "On-Campus"].forEach(tag => {
+          const id = tag === "On-Campus" ? "pins-on" : "pins-off";
+          map.addLayer({
+            id: `${id}-hit`,
+            source: "pins",
+            type: "circle",
+            filter: ["==", ["get", "tag"], tag],
+            paint: {
+              "circle-radius": PIN_TOUCH_RADIUS,
+              "circle-opacity": 0,               // fully invisible
+              "circle-stroke-width": 0,
+            }
+          });
+        });
+
+        // use hit layers for events so the clickable area is large,
+        // but visual layers remain the right size
+        const hitLayers = ["pins-off-hit", "pins-on-hit"];
+
+        hitLayers.forEach(layerId => {
+          map.on("mouseenter", layerId, (e) => {
+            map.getCanvas().style.cursor = "pointer";
+            const name = e.features[0].properties.name;
+            map.setFilter("pins-halo", ["==", ["get", "name"], name]);
+          });
+
+          map.on("mouseleave", layerId, () => {
+            map.getCanvas().style.cursor = "";
+            map.setFilter("pins-halo", ["==", ["get", "name"], ""]);
+          });
 
           map.on("click", layerId, (e) => {
             const props = e.features[0].properties;
-
-            const spStart = Number(props.gghStartSp);
-            const spEnd   = Number(props.gghEndSp);
-            const faStart = Number(props.gghStartFa);
-            const faEnd   = Number(props.gghEndFa);
-
-            const springLine =
-              spStart === spEnd
-                ? doyToDateStr(spStart)
-                : `${doyToDateStr(spStart)} – ${doyToDateStr(spEnd)}`;
-
-            const fallLine =
-              faStart === faEnd
-                ? doyToDateStr(faStart)
-                : `${doyToDateStr(faStart)} – ${doyToDateStr(faEnd)}`;
-
-            const samePeriod =
-              spStart === faStart && spEnd === faEnd;
-
-            const dateHtml = samePeriod
-              ? `<div class="popup-row"><strong>GGH Dates:</strong> ${springLine}</div>`
-              : `
-                <div class="popup-row"><strong>Spring Dates:</strong> ${springLine}</div>
-                <div class="popup-row"><strong>Fall Dates:</strong> ${fallLine}</div>
-              `;
-
-            const tagClass = props.tag === "On-Campus" ? "on-campus" : "off-campus";
-
-            const notesHtml = props.notes
-              ? `<div class="popup-row">${props.notes}</div>`
-              : "";
-
-            const html = `
-              <div class="popup-name">${props.name}</div>
-              <div class="popup-row">
-                <strong>Coordinates:</strong>
-                ${Number(props.lat).toFixed(5)}, ${Number(props.lng).toFixed(5)}
-              </div>
-              ${dateHtml}
-              <div class="popup-row"><strong>Accessibility:</strong> ${props.access}</div>
-              <div class="popup-row"><strong>Visibility:</strong> ${props.views}</div>
-              <div class="popup-row"><strong>Environment:</strong> ${props.env}</div>
-              <span class="popup-tag ${tagClass}">${props.tag}</span>
-              ${notesHtml}
-            `;
-
-            new maplibregl.Popup({ offset: 12, maxWidth: "280px" })
+            new maplibregl.Popup({ offset: 16, maxWidth: "280px" })
               .setLngLat(e.lngLat)
-              .setHTML(html)
+              .setHTML(buildPopupHtml(props))
               .addTo(map);
           });
         });
@@ -629,7 +784,7 @@
       setDay(1);
 
     /* ============================================================
-        Section 7 — HELPERS + BOOT
+        Section 7 — MATH FUNCTIONS
         ============================================================ */
       function degToRad(deg) {
         return deg * Math.PI / 180;
@@ -645,10 +800,12 @@
         const phi2 = degToRad(toLat);
         const lambda1 = degToRad(fromLng);
         const lambda2 = degToRad(toLng);
+
         const y = Math.sin(lambda2 - lambda1) * Math.cos(phi2);
         const x =
           Math.cos(phi1) * Math.sin(phi2) -
           Math.sin(phi1) * Math.cos(phi2) * Math.cos(lambda2 - lambda1);
+
         return (radToDeg(Math.atan2(y, x)) + 360) % 360;
       }
 
@@ -665,35 +822,114 @@
         return Math.abs(signedAngleDiff(a, b));
       }
 
-      function approxDeclinationDeg(dayNum, daysThisYear) {
+      function sunsetUTC(dayNum, year = SLIDER_YEAR, lat, lng) {
+        const PI = Math.PI;
+        const zen = 90.833;
+        const gA = 18;
+        const daysThisYear = isLeapYear(year) ? 366 : 365;
+        const d = new Date(Date.UTC(year, 0, dayNum)); // midnight UTC of dayNum
+
+        // first pass
+        const gammaA = 2 * PI / daysThisYear * (dayNum - 1 + (gA - 12) / 24);
+        const eqA = 229.18 * (
+          0.000075 +
+          0.001868 * Math.cos(gammaA) -
+          0.032077 * Math.sin(gammaA) -
+          0.014615 * Math.cos(2 * gammaA) -
+          0.040849 * Math.sin(2 * gammaA)
+        );
+
+        const decA =
+          0.006918 -
+          0.399912 * Math.cos(gammaA) +
+          0.070257 * Math.sin(gammaA) -
+          0.006758 * Math.cos(2 * gammaA) +
+          0.000907 * Math.sin(2 * gammaA) -
+          0.002697 * Math.cos(3 * gammaA) +
+          0.00148 * Math.sin(3 * gammaA);
+
+        const haA = radToDeg(
+          Math.acos(
+            Math.cos(degToRad(zen)) /
+              (Math.cos(degToRad(lat)) * Math.cos(decA)) -
+            Math.tan(degToRad(lat)) * Math.tan(decA)
+          )
+        );
+
+        const smA = 720 - 4 * lng - eqA + 4 * haA;
+
+        // second pass
+        const gB = smA / 60;
+        const gammaB = 2 * PI / daysThisYear * (dayNum - 1 + (gB - 12) / 24);
+
+        const eqB = 229.18 * (
+          0.000075 +
+          0.001868 * Math.cos(gammaB) -
+          0.032077 * Math.sin(gammaB) -
+          0.014615 * Math.cos(2 * gammaB) -
+          0.040849 * Math.sin(2 * gammaB)
+        );
+
+        const decB =
+          0.006918 -
+          0.399912 * Math.cos(gammaB) +
+          0.070257 * Math.sin(gammaB) -
+          0.006758 * Math.cos(2 * gammaB) +
+          0.000907 * Math.sin(2 * gammaB) -
+          0.002697 * Math.cos(3 * gammaB) +
+          0.00148 * Math.sin(3 * gammaB);
+
+        const haB = radToDeg(
+          Math.acos(
+            Math.cos(degToRad(zen)) /
+              (Math.cos(degToRad(lat)) * Math.cos(decB)) -
+            Math.tan(degToRad(lat)) * Math.tan(decB)
+          )
+        );
+
+        const smB = 720 - 4 * lng - eqB + 4 * haB;
+
+        // convert to date in UTC
+        return new Date(d.getTime() + smB * 60000);
+      }
+
+      function dayFrac(dayNum, lat, lng, year = SLIDER_YEAR) {
+        const sunset = sunsetUTC(dayNum, year, lat, lng);
+        const startOfYear = new Date(Date.UTC(year, 0, 1));
+        return (sunset - startOfYear) / 86400000 + 1;
+      }
+
+      function sunsetDeclination(dayFraction, daysThisYear) {
         return radToDeg(
           0.006918
-          - 0.399912 * Math.cos((2 * Math.PI * (dayNum - 1)) / daysThisYear)
-          + 0.070257 * Math.sin((2 * Math.PI * (dayNum - 1)) / daysThisYear)
-          - 0.006758 * Math.cos((4 * Math.PI * (dayNum - 1)) / daysThisYear)
-          + 0.000907 * Math.sin((4 * Math.PI * (dayNum - 1)) / daysThisYear)
-          - 0.002697 * Math.cos((6 * Math.PI * (dayNum - 1)) / daysThisYear)
-          + 0.00148  * Math.sin((6 * Math.PI * (dayNum - 1)) / daysThisYear)
+          - 0.399912 * Math.cos((2 * Math.PI * (dayFraction - 1)) / daysThisYear)
+          + 0.070257 * Math.sin((2 * Math.PI * (dayFraction - 1)) / daysThisYear)
+          - 0.006758 * Math.cos((4 * Math.PI * (dayFraction - 1)) / daysThisYear)
+          + 0.000907 * Math.sin((4 * Math.PI * (dayFraction - 1)) / daysThisYear)
+          - 0.002697 * Math.cos((6 * Math.PI * (dayFraction - 1)) / daysThisYear)
+          + 0.00148  * Math.sin((6 * Math.PI * (dayFraction - 1)) / daysThisYear)
         );
       }
 
-      function approxSunsetAzimuthDeg(latDeg, dayNum, year = SLIDER_YEAR) {
+      function sunsetAzimuth(dayFraction, lat, year = SLIDER_YEAR) {
         const daysThisYear = isLeapYear(year) ? 366 : 365;
-        const declDeg = approxDeclinationDeg(dayNum, daysThisYear);
-        const val = Math.sin(degToRad(declDeg)) / Math.cos(degToRad(latDeg));
+        const declDeg = sunsetDeclination(dayFraction, daysThisYear);
+        const val = Math.sin(degToRad(declDeg)) / Math.cos(degToRad(lat));
         const clamped = Math.max(-1, Math.min(1, val));
-        return ((360 - radToDeg(Math.acos(clamped))) % 360) + 0.5; // original epsilon is 0.5!
+        return ((360 - radToDeg(Math.acos(clamped))) % 360) + 0.5;
       }
 
       function getBridgeBounds(lng, lat) {
         const thetaMid = bearingDeg(lng, lat, MIDPOINT[0], MIDPOINT[1]);
         const thetaNorth = bearingDeg(lng, lat, NORTH_TOWER[0], NORTH_TOWER[1]);
         const thetaSouth = bearingDeg(lng, lat, SOUTH_TOWER[0], SOUTH_TOWER[1]);
+
         const bridgeDelta = angularWidth(thetaSouth, thetaNorth);
         const allowedDelta = bridgeDelta / 3;
         const center = thetaMid;
         const upper = normalize360(center + allowedDelta / 2);
         const lower = normalize360(center - allowedDelta / 2);
+
         return {
           thetaMid,
           thetaNorth,
@@ -707,9 +943,11 @@
       }
 
       // residual = 0 exactly on the requested boundary
-      function boundaryResidual(lng, lat, dayNum, side) {
-        const sunAz = approxSunsetAzimuthDeg(lat, dayNum);
+      function boundaryResidual(dayNum, lat, lng, side) {
+        const dayFraction = dayFrac(dayNum, lat, lng, SLIDER_YEAR);
+        const sunAz = sunsetAzimuth(dayFraction, lat, SLIDER_YEAR);
         const bounds = getBridgeBounds(lng, lat);
+
         if (side === "upper") {
           return signedAngleDiff(sunAz, bounds.upper);
         }
@@ -717,13 +955,13 @@
       }
 
       // find latitude for one longitude
-      function findBoundaryLatAtLng(lng, dayNum, side) {
+      function findBoundaryLatAtLng(dayNum, lng, side) {
         const step = GRID_STEP_DEG;
         let prevLat = GRID_LAT_MIN;
-        let prevVal = boundaryResidual(lng, prevLat, dayNum, side);
+        let prevVal = boundaryResidual(dayNum, prevLat, lng, side);
 
         for (let lat = GRID_LAT_MIN + step; lat <= GRID_LAT_MAX; lat += step) {
-          const val = boundaryResidual(lng, lat, dayNum, side);
+          const val = boundaryResidual(dayNum, lat, lng, side);
 
           if (Math.abs(val) < 1e-8) {
             return lat;
@@ -737,7 +975,7 @@
 
             for (let i = 0; i < 32; i++) {
               const midLat = (loLat + hiLat) / 2;
-              const midVal = boundaryResidual(lng, midLat, dayNum, side);
+              const midVal = boundaryResidual(dayNum, midLat, lng, side);
 
               if (Math.abs(midVal) < 1e-8) {
                 return midLat;
@@ -773,8 +1011,8 @@
         const rows = [];
 
         for (let lng = GRID_LNG_MIN; lng <= GRID_LNG_MAX; lng += GRID_STEP_DEG) {
-          const upperLat = findBoundaryLatAtLng(lng, dayNum, "upper");
-          const lowerLat = findBoundaryLatAtLng(lng, dayNum, "lower");
+          const upperLat = findBoundaryLatAtLng(dayNum, lng, "upper");
+          const lowerLat = findBoundaryLatAtLng(dayNum, lng, "lower");
 
           if (upperLat !== null && lowerLat !== null && upperLat >= lowerLat) {
             rows.push({
@@ -827,7 +1065,6 @@
 
         const upperCoords = bestSegment.map(p => [p.lng, p.upper]);
         const lowerCoords = bestSegment.map(p => [p.lng, p.lower]).reverse();
-
         const ring = [...upperCoords, ...lowerCoords, upperCoords[0]];
 
         return {
