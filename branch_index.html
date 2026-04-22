@@ -45,13 +45,13 @@
       border: 1px solid rgba(70, 60, 54, 0.12);
       border-radius: 14px;
       box-shadow: 0 8px 24px rgba(40, 30, 20, 0.12);
-      max-width: 340px;
+      width: 360px;
     }
   
     .panel-header {
       display: flex;
       align-items: baseline;
-      gap: 10px;
+      gap: 20px;
       margin-bottom: 14px;
       border-bottom: 1px solid rgba(70, 60, 54, 0.08);
       padding-bottom: 12px;
@@ -76,6 +76,50 @@
       gap: 6px;
       margin-bottom: 14px;
     }
+
+    .search-suggestions {
+      position: relative;
+      margin-top: -8px;
+      margin-bottom: 12px;
+      z-index: 1100;
+    }
+
+    .search-suggestions-box {
+      background: rgba(250, 248, 244, 0.97);
+      border: 1px solid rgba(70, 60, 54, 0.10);
+      border-radius: 10px;
+      box-shadow: 0 10px 24px rgba(40, 30, 20, 0.12);
+      overflow: hidden;
+    }
+
+    .search-suggestion-item {
+      padding: 9px 11px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(70, 60, 54, 0.06);
+      background: transparent;
+    }
+
+    .search-suggestion-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-suggestion-item:hover {
+      background: rgba(255,255,255,0.82);
+    }
+
+    .search-suggestion-main {
+      font-size: 11px;
+      font-weight: 500;
+      color: #1f2328;
+      line-height: 1.3;
+    }
+
+    .search-suggestion-sub {
+      font-size: 10px;
+      color: rgba(31, 35, 40, 0.55);
+      margin-top: 2px;
+      line-height: 1.3;
+    }
   
     input[type="search"] {
       flex: 1;
@@ -85,13 +129,14 @@
       background: rgba(255,255,255,0.72);
       color: #1f2328;
       font-family: "DM Sans", sans-serif;
-      font-size: 12px;
+      font-size: 10px;
       outline: none;
       transition: border-color 0.15s, background 0.15s;
     }
   
     input[type="search"]::placeholder {
       color: rgba(31, 35, 40, 0.38);
+      font-size: 10px;
     }
   
     input[type="search"]:focus {
@@ -344,9 +389,10 @@
 
     <!-- search -->
     <div class="search-row">
-      <input id="search" type="search" placeholder="Search by location name" />
+      <input id="search" type="search" placeholder="Search by pin name, address, or coordinates" />
       <button class ="btn" id="resetBtn">Reset</button>
     </div>
+    <div id="searchSuggestions" class="search-suggestions"></div>
 
     <!-- day slider -->
     <div class="slider-section">
@@ -381,7 +427,7 @@
 
     <div style="display:flex; align-items:center; margin-top:10px;">
       <div class="count-line" id="countLine"></div>
-      <button class="btn" id="showAllBtn" style="margin-left:auto;">Show All Pins</button>
+      <button class="btn" id="showAllBtn" style="margin-left:auto;">Filter by Date</button>
     </div>
   <script>
     /* ============================================================
@@ -401,8 +447,8 @@
           env: double,
           notes: string
        ============================================================ */
-       const PINS = [
-       { name: "Albany Bulb", photo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/20221009_123157_HDR.jpg", lat: 37.8888190128995, lng: -122.327415343957, gghStartSp: 346, gghEndSp: 365, gghStartFa: 346, gghEndFa: 365, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+      const PINS = [
+        { name: "Albany Bulb", photo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/20221009_123157_HDR.jpg", lat: 37.8888190128995, lng: -122.327415343957, gghStartSp: 346, gghEndSp: 365, gghStartFa: 346, gghEndFa: 365, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Indian Rock Park", lat: 37.8922186297827, lng: -122.273079038403, gghStartSp: 23, gghEndSp: 26, gghStartFa: 320, gghEndFa: 322, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Grotto Rock Park", lat: 37.8934271576909, lng: -122.268772249069, gghStartSp: 23, gghEndSp: 26, gghStartFa: 319, gghEndFa: 322, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
         { name: "Seaview Trail Vista", lat: 37.8941055046049, lng: -122.234256937359, gghStartSp: 32, gghEndSp: 34, gghStartFa: 312, gghEndFa: 313, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
@@ -440,6 +486,9 @@
       const MAPTILER_STYLE = "https://api.maptiler.com/maps/voyager-v2/style.json?key=cv2lryclk9tg1QR6KCLy";
       const MAP_CENTER = [-122.2730, 37.8715];
       const START_ZOOM = 11.4;
+
+      const MAPTILER_KEY = "cv2lryclk9tg1QR6KCLy";
+      const GEOCODE_BASE = "https://api.maptiler.com/geocoding";
 
       const COLOR_ON   = "#6f8fb8";
       const COLOR_OFF  = "#b87a6f";
@@ -764,14 +813,299 @@
       const showAllBtn = document.getElementById("showAllBtn");
       const countLine = document.getElementById("countLine");
 
-      searchInput.addEventListener("input", applyFilters);
+      const suggestionsEl = document.getElementById("searchSuggestions");
+      let suggestionItems = [];
+      let addressSuggestTimer = null;
+      let latestSuggestToken = 0;
 
-      resetBtn.addEventListener("click", () => {
+      function clearSuggestions() {
+        suggestionItems = [];
+        suggestionsEl.innerHTML = "";
+      }
+
+      function renderSuggestions(items) {
+        suggestionItems = items;
+        if (!items.length) {
+          clearSuggestions();
+          return;
+        }
+        suggestionsEl.innerHTML = `
+          <div class="search-suggestions-box">
+            ${items.map((item, i) => `
+              <div class="search-suggestion-item" data-index="${i}">
+                <div class="search-suggestion-main">${item.main}</div>
+                ${item.sub ? `<div class="search-suggestion-sub">${item.sub}</div>` : ""}
+              </div>
+            `).join("")}
+          </div>
+        `;
+        suggestionsEl.querySelectorAll(".search-suggestion-item").forEach(node => {
+          node.addEventListener("click", () => {
+            const i = Number(node.dataset.index);
+            suggestionItems[i].onClick();
+            clearSuggestions();
+          });
+        });
+      }
+
+      function getPinSuggestions(query) {
+        const q = query.trim().toLowerCase();
+        if (!q) return [];
+        return PINS
+          .filter(pin => pin.name.toLowerCase().includes(q))
+          .slice(0, 5)
+          .map(pin => ({
+            main: pin.name,
+            sub: pin.tag,
+            onClick: () => {
+              searchInput.value = pin.name;
+              runSearch();
+            }
+          }));
+      }
+
+      async function getAddressSuggestions(query) {
+        const bounds = map.getBounds();
+        const bbox = [
+          bounds.getWest(),
+          bounds.getSouth(),
+          bounds.getEast(),
+          bounds.getNorth()
+        ].join(",");
+        const url =
+          `${GEOCODE_BASE}/${encodeURIComponent(query)}.json` +
+          `?bbox=${bbox}` +
+          `&proximity=${MAP_CENTER[0]},${MAP_CENTER[1]}` +
+          `&types=address,street` +
+          `&limit=5` +
+          `&key=${MAPTILER_KEY}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Address suggestion request failed");
+        const data = await res.json();
+        const features = data.features || [];
+        return features.map(f => ({
+          main: f.text || "Address result",
+          sub: f.place_name || "",
+          onClick: () => {
+            searchInput.value = f.place_name || f.text || "";
+            const [lng, lat] = f.center;
+            map.flyTo({
+              center: [lng, lat],
+              zoom: Math.max(map.getZoom(), 14),
+              essential: true
+            });
+            clickedLngLat = { lng, lat };
+            updateClickedSunsetPopup();
+          }
+        }));
+      }
+
+      async function updateSuggestions() {
+        const query = searchInput.value.trim();
+        if (!query) {
+          clearSuggestions();
+          return;
+        }
+        const token = ++latestSuggestToken;
+        const pinSuggestions = getPinSuggestions(query);
+        // show pin suggestions immediately
+        renderSuggestions(pinSuggestions);
+        clearTimeout(addressSuggestTimer);
+        addressSuggestTimer = setTimeout(async () => {
+          try {
+            const addressSuggestions = await getAddressSuggestions(query);
+            if (token !== latestSuggestToken) return;
+            const merged = [...pinSuggestions, ...addressSuggestions].slice(0, 8);
+            renderSuggestions(merged);
+          } catch (err) {
+            console.error(err);
+            if (token !== latestSuggestToken) return;
+            renderSuggestions(pinSuggestions);
+          }
+        }, 250);
+      }
+
+      let searchMarkerPopup = null;
+
+      function parseCoordinates(query) {
+        const q = query.trim();
+        // accepts [lng,lat] [lng, lat] or [lng lat]
+        const match = q.match(
+          /^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/
+        );
+        if (!match) return null;
+        const a = Number(match[1]);
+        const b = Number(match[2]);
+        // if lat,lng (correct format)
+        if (a >= -90 && a <= 90 && b >= -180 && b <= 180) {
+          return { lat: a, lng: b };
+        }
+        // if lng,lat
+        if (a >= -180 && a <= 180 && b >= -90 && b <= 90) {
+          return { lat: b, lng: a };
+        }
+        return null;
+      }
+
+      function getPinsMatchingQuery(query) {
+        const q = query.trim().toLowerCase();
+        if (!q) return [];
+
+        return PINS.filter(pin =>
+          pin.name.toLowerCase().includes(q)
+        );
+      }
+
+      function getVisiblePinsByDay() {
+        const day = Number(daySlider.value);
+        return PINS.filter(pin => {
+          const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
+          const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
+          const matchesDay = showAll ? true : (matchesSpring || matchesFall);
+          return matchesDay;
+        });
+      }
+
+      async function searchAddressInMapBounds(query) {
+        const bounds = map.getBounds();
+        const bbox = [
+          bounds.getWest(),
+          bounds.getSouth(),
+          bounds.getEast(),
+          bounds.getNorth()
+        ].join(",");
+        const url =
+          `${GEOCODE_BASE}/${encodeURIComponent(query)}.json` +
+          `?bbox=${bbox}` +
+          `&proximity=${MAP_CENTER[0]},${MAP_CENTER[1]}` +
+          `&types=address,street` +
+          `&limit=5` +
+          `&key=${MAPTILER_KEY}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Geocoding request failed");
+        const data = await res.json();
+        return data.features || [];
+      }
+
+      async function runSearch() {
+        const query = searchInput.value.trim();
+        if (!query) {
+          applyFilters();
+          return;
+        }
+
+        // 1) exact/partial pin-name matches
+        const pinMatches = getPinsMatchingQuery(query);
+        if (pinMatches.length > 0) {
+          const pin = pinMatches[0];
+          selectedPinLngLat = { lng: pin.lng, lat: pin.lat };
+          selectedPinProps = { ...pin };
+          if (selectedPinPopup) {
+            suppressSelectedPinClose = true;
+            selectedPinPopup.remove();
+            suppressSelectedPinClose = false;
+          }
+          selectedPinPopup = new maplibregl.Popup({ offset: 16, maxWidth: "280px" })
+            .setLngLat([pin.lng, pin.lat])
+            .setHTML(buildPopupHtml(pin))
+            .addTo(map);
+          selectedPinPopup.on("close", () => {
+            if (suppressSelectedPinClose) return;
+            selectedPinPopup = null;
+            selectedPinLngLat = null;
+            selectedPinProps = null;
+          });
+
+          return;
+        }
+
+        // 2) typed coordinates
+        const coords = parseCoordinates(query);
+        if (coords) {
+          map.flyTo({
+            center: [coords.lng, coords.lat],
+            zoom: Math.max(map.getZoom(), 13.5),
+            essential: true
+          });
+          clickedLngLat = { lng: coords.lng, lat: coords.lat };
+          updateClickedSunsetPopup();
+          return;
+        }
+
+        // 3) address search restricted to current map frame
+        try {
+          const features = await searchAddressInMapBounds(query);
+          if (features.length > 0) {
+            const f = features[0];
+            const [lng, lat] = f.center;
+            map.flyTo({
+              center: [lng, lat],
+              zoom: Math.max(map.getZoom(), 14),
+              essential: true
+            });
+            clickedLngLat = { lng, lat };
+            updateClickedSunsetPopup();
+            return;
+          }
+          countLine.textContent = "No valid pin, address, or coordinate found";
+        } catch (err) {
+          console.error(err);
+          countLine.textContent = "Search failed";
+        }
+      }
+
+      function resetState() {
         searchInput.value = "";
-        showAll = false;
-        showAllBtn.textContent = "Show All Pins";
+        showAll = true;
+        showAllBtn.textContent = "Filter by Date";
+        clickedLngLat = null;
+        const clickedSource = map.getSource("clicked-point");
+        if (clickedSource) {
+          clickedSource.setData({
+            type: "FeatureCollection",
+            features: []
+          });
+        }
+        if (clickedPopup) {
+          clickedPopup.remove();
+          clickedPopup = null;
+        }
+        clearSuggestions();
         applyFilters();
+      }
+
+      function applyFilters() {
+        const query = searchInput.value.trim().toLowerCase();
+        const day = Number(daySlider.value);
+        const visible = PINS.filter(pin => {
+          const matchesSearch =
+            query === "" ||
+            pin.name.toLowerCase().includes(query);
+          const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
+          const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
+          const matchesDay = showAll ? true : (matchesSpring || matchesFall);
+          return matchesSearch && matchesDay;
+        });
+        const source = map.getSource("pins");
+        if (source) source.setData(buildGeoJSON(visible));
+        const n = visible.length;
+        countLine.textContent = `Showing ${n} pin${n === 1 ? "" : "s"} of ${PINS.length}`;
+      }
+
+      searchInput.addEventListener("input", () => {
+        applyFilters();
+        updateSuggestions();
       });
+
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          clearSuggestions();
+          runSearch();
+        }
+      });
+
+      resetBtn.addEventListener("click", resetState);
 
       showAllBtn.addEventListener("click", () => {
         showAll = !showAll;
@@ -779,34 +1113,16 @@
         applyFilters();
       });
 
+      document.addEventListener("click", (e) => {
+        if (!searchInput.contains(e.target) && !suggestionsEl.contains(e.target)) {
+          clearSuggestions();
+        }
+      });
+
     /* ============================================================
        Section 6 — DAY SLIDER
        ============================================================ */
-      let showAll = false;
-      function applyFilters() {
-        const query = document.getElementById("search").value.trim().toLowerCase();
-        const day = Number(document.getElementById("daySlider").value);
-
-        const visible = PINS.filter(pin => {
-          const matchesSearch =
-            query === "" ||
-            pin.name.toLowerCase().includes(query) ||
-            (pin.notes || "").toLowerCase().includes(query);
-
-          const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
-          const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
-          const matchesDay = showAll ? true : (matchesSpring || matchesFall);
-
-          return matchesSearch && matchesDay;
-        });
-
-        const source = map.getSource("pins");
-        if (source) source.setData(buildGeoJSON(visible));
-
-        const n = visible.length;
-        document.getElementById("countLine").textContent =
-          `Showing ${n} pin${n === 1 ? "" : "s"} of ${PINS.length}`;
-      }
+      let showAll = true;
 
       const daySlider = document.getElementById("daySlider");
       const dayNum = document.getElementById("dayNum");
@@ -1180,6 +1496,7 @@
         const { lng, lat } = clickedLngLat;
         const day = Number(daySlider.value);
         const sunsetStr = sunsetLocalTime(day, lat, lng, SLIDER_YEAR);
+
         if (clickedPopup) {
           suppressClickedPopupClose = true;
           clickedPopup.remove();
@@ -1216,15 +1533,7 @@
 
         clickedPopup.on("close", () => {
           if (suppressClickedPopupClose) return;
-          clickedLngLat = null;
-          const clickedSource = map.getSource("clicked-point");
-          if (clickedSource) {
-            clickedSource.setData({
-              type: "FeatureCollection",
-              features: []
-            });
-          }
-          clickedPopup = null;
+          resetState();
         });
       }
 
