@@ -1024,7 +1024,7 @@
         if (coords) {
           map.flyTo({
             center: [coords.lng, coords.lat],
-            zoom: Math.max(map.getZoom(), 13.5),
+            zoom: Math.max(map.getZoom(), 12),
             essential: true
           });
           clickedLngLat = { lng: coords.lng, lat: coords.lat };
@@ -1040,7 +1040,7 @@
             const [lng, lat] = f.center;
             map.flyTo({
               center: [lng, lat],
-              zoom: Math.max(map.getZoom(), 14),
+              zoom: Math.max(map.getZoom(), 12),
               essential: true
             });
             clickedLngLat = { lng, lat };
