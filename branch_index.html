@@ -458,6 +458,126 @@
       margin-top: 12px;
       width: 100%;
     }
+
+    .pin-menu-wrap {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 1000;
+      width: 340px;
+    }
+
+    .pin-menu-box {
+      background: rgba(250, 248, 244, 0.86);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(70, 60, 54, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(40, 30, 20, 0.12);
+      overflow: hidden;
+    }
+
+    .pin-menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(70, 60, 54, 0.08);
+    }
+
+    .pin-menu-title {
+      font-family: "DM Mono", monospace;
+      font-size: 12px;
+      color: #1f2328;
+      letter-spacing: 0.03em;
+    }
+
+    .pin-menu-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pin-sort-select {
+      border: 1px solid rgba(70, 60, 54, 0.10);
+      border-radius: 9px;
+      padding: 7px 9px;
+      background: rgba(255,255,255,0.72);
+      color: #1f2328;
+      font-family: "DM Sans", sans-serif;
+      font-size: 11px;
+      outline: none;
+    }
+
+    .pin-menu-toggle {
+      border: 1px solid rgba(70, 60, 54, 0.10);
+      border-radius: 9px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-family: "DM Mono", monospace;
+      font-size: 11px;
+      background: rgba(255,255,255,0.7);
+      color: rgba(31, 35, 40, 0.72);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+
+    .pin-menu-toggle:hover {
+      background: rgba(255,255,255,0.95);
+      color: #1f2328;
+      border-color: rgba(70, 60, 54, 0.18);
+    }
+
+    .pin-menu-list {
+      max-height: 425px;
+      overflow-y: auto;
+    }
+
+    .pin-menu-list.hidden {
+      display: none;
+    }
+
+    .pin-menu-item {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid rgba(70, 60, 54, 0.06);
+      background: transparent;
+      text-align: left;
+      padding: 11px 14px;
+      cursor: pointer;
+      font-family: "DM Sans", sans-serif;
+      transition: background 0.15s;
+    }
+
+    .pin-menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .pin-menu-item:hover {
+      background: rgba(255,255,255,0.78);
+    }
+
+    .pin-menu-item-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1f2328;
+      line-height: 1.35;
+      margin-bottom: 4px;
+    }
+
+    .pin-menu-item-meta {
+      font-size: 10px;
+      color: rgba(31, 35, 40, 0.62);
+      line-height: 1.45;
+    }
+
+    .pin-menu-item-rating {
+      margin-top: 3px;
+      font-family: "DM Mono", monospace;
+      font-size: 10px;
+      color: rgba(31, 35, 40, 0.72);
+    }
   </style>
 </head>
 
@@ -470,7 +590,7 @@
       <div class="popup-row">• Use this site to find locations and times to see Golden Gate Henge (GGH).</div>
       <div class="popup-row">• Drag the slider to change the date.</div>
       <div class="popup-row">• The gold band shows valid areas to view GGH on a given date.</div>
-      <div class="popup-row">• Red and blue pins show selected viewing locations off- and on-campus.</div>
+      <div class="popup-row">• Red and blue pins show selected viewing locations off- and on-campus and are listed in the dropdown menu to the right.</div>
       <div class="popup-row">• Click any pin to get more details, including sunset time, GGH dates, and ratings.</div>
       <div class="popup-row">• Click anywhere on the map to drop a pin and get sunset time.</div>
       <div class="popup-row">• Use the search bar to search for pins, addresses, or coordinates, then hit Enter.</div>
@@ -478,6 +598,22 @@
       <div class="popup-row">• Click "Today" to go to today's date.</div>
       <div class="popup-row">• Click "Reset" to reset the search and map filters.</div>
       <button id="closeHelp" class="btn help-close">Close</button>
+    </div>
+  </div>
+
+  <div class="pin-menu-wrap">
+    <div class="pin-menu-box">
+      <div class="pin-menu-header">
+        <div class="pin-menu-title">All Pins</div>
+        <div class="pin-menu-controls">
+          <select id="pinSortSelect" class="pin-sort-select">
+            <option value="alphabet">Sort: Alphabet</option>
+            <option value="rating">Sort: Rating</option>
+          </select>
+          <button id="pinMenuToggle" class="pin-menu-toggle">Hide</button>
+        </div>
+      </div>
+      <div id="pinMenuList" class="pin-menu-list"></div>
     </div>
   </div>
 
@@ -838,7 +974,7 @@
             filter: ["==", ["get", "tag"], tag],
             paint: {
               "circle-radius": PIN_TOUCH_RADIUS,
-              "circle-opacity": 0,               // fully invisible
+              "circle-opacity": 0, // fully invisible
               "circle-stroke-width": 0,
             }
           });
@@ -914,9 +1050,71 @@
             updateClickedSunsetPopup();
           });
         });
-
+        renderPinMenu();
         applyFilters();
       });
+
+      function formatDateRange(start, end) {
+        return Number(start) === Number(end)
+          ? doyToDateStr(Number(start))
+          : `${doyToDateStr(Number(start))} – ${doyToDateStr(Number(end))}`;
+      }
+
+      function getSortedPins(sortMode) {
+        const pinsCopy = [...PINS];
+        if (sortMode === "rating") {
+          pinsCopy.sort((a, b) => {
+            const diff =
+              getWeightedRating(b.access, b.views, b.env) -
+              getWeightedRating(a.access, a.views, a.env);
+
+            if (diff !== 0) return diff;
+            return a.name.localeCompare(b.name);
+          });
+        } else {
+          pinsCopy.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        return pinsCopy;
+      }
+
+      function renderPinMenu() {
+        const pinMenuList = document.getElementById("pinMenuList");
+        const pinSortSelect = document.getElementById("pinSortSelect");
+        if (!pinMenuList || !pinSortSelect) return;
+        const sortedPins = getSortedPins(pinSortSelect.value);
+        pinMenuList.innerHTML = sortedPins.map(pin => {
+          const springLine = formatDateRange(pin.gghStartSp, pin.gghEndSp);
+          const fallLine = formatDateRange(pin.gghStartFa, pin.gghEndFa);
+          const weighted = getWeightedRating(pin.access, pin.views, pin.env).toFixed(2);
+          return `
+            <button class="pin-menu-item" data-pin-name="${pin.name}">
+              <div class="pin-menu-item-name">${pin.name}</div>
+              <div class="pin-menu-item-meta">Spring Dates: ${springLine}</div>
+              <div class="pin-menu-item-meta">Fall Dates: ${fallLine}</div>
+              <div class="pin-menu-item-meta"><strong>Overall rating: ${weighted}</strong></div>
+            </button>
+          `;
+        }).join("");
+        pinMenuList.querySelectorAll(".pin-menu-item").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const pinName = btn.dataset.pinName;
+            const pin = PINS.find(p => p.name === pinName);
+            if (pin) {
+              const day = Number(daySlider.value);
+              const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
+              const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
+              const matchesDay = matchesSpring || matchesFall;
+              if (!showAll && !matchesDay) {
+                showAll = true;
+                showAllBtn.textContent = "Filter by Date";
+              }
+            }
+            searchInput.value = pinName;
+            clearSuggestions();
+            await runSearch();
+          });
+        });
+      }
 
     /* ============================================================
        Section 5 — SEARCH UI
@@ -925,7 +1123,9 @@
       const resetBtn = document.getElementById("resetBtn");
       const showAllBtn = document.getElementById("showAllBtn");
       const countLine = document.getElementById("countLine");
-
+      const pinMenuList = document.getElementById("pinMenuList");
+      const pinSortSelect = document.getElementById("pinSortSelect");
+      const pinMenuToggle = document.getElementById("pinMenuToggle");
       const suggestionsEl = document.getElementById("searchSuggestions");
       let suggestionItems = [];
       let addressSuggestTimer = null;
@@ -1319,6 +1519,15 @@
         }
       });
 
+      pinSortSelect.addEventListener("change", () => {
+        renderPinMenu();
+      });
+
+      pinMenuToggle.addEventListener("click", () => {
+        pinMenuList.classList.toggle("hidden");
+        pinMenuToggle.textContent = pinMenuList.classList.contains("hidden") ? "Show" : "Hide";
+      });
+
     /* ============================================================
        Section 6 — DAY SLIDER
        ============================================================ */
@@ -1370,6 +1579,7 @@
           }
           updateClickedSunsetPopup();
           updateSelectedPinPopup();
+          renderPinMenu();
         }
       }
 
