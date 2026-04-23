@@ -1097,6 +1097,21 @@
         }).join("");
         pinMenuList.querySelectorAll(".pin-menu-item").forEach(btn => {
           btn.addEventListener("click", async () => {
+            clickedLngLat = null;
+            clickedPinCameFromSearch = false;
+            const clickedSource = map.getSource("clicked-point");
+            if (clickedSource) {
+              clickedSource.setData({
+                type: "FeatureCollection",
+                features: []
+              });
+            }
+            if (clickedPopup) {
+              suppressClickedPopupClose = true;
+              clickedPopup.remove();
+              suppressClickedPopupClose = false;
+              clickedPopup = null;
+            }
             const pinName = btn.dataset.pinName;
             const pin = PINS.find(p => p.name === pinName);
             if (pin) {
@@ -1459,6 +1474,18 @@
             const matchesDay = showAll ? true : (matchesSpring || matchesFall);
             return matchesSearch && matchesDay;
           });
+        }
+        if (selectedPinPopup && selectedPinProps) {
+          const selectedName = String(selectedPinProps.name || "");
+          const stillVisible = visible.some(pin => pin.name === selectedName);
+          if (!stillVisible) {
+            suppressSelectedPinClose = true;
+            selectedPinPopup.remove();
+            suppressSelectedPinClose = false;
+            selectedPinPopup = null;
+            selectedPinLngLat = null;
+            selectedPinProps = null;
+          }
         }
         if (searchPinnedResult) {
           const stillVisible = visible.length > 0;
