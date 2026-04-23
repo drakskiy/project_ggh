@@ -71,19 +71,28 @@
       font-weight: 400;
     }
   
+    #helpText {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+  
+    #helpText:hover {
+      text-decoration: none;
+    }
+  
     .search-row {
       display: flex;
       gap: 6px;
       margin-bottom: 14px;
     }
-
+  
     .search-suggestions {
       position: relative;
       margin-top: -8px;
       margin-bottom: 12px;
       z-index: 1100;
     }
-
+  
     .search-suggestions-box {
       background: rgba(250, 248, 244, 0.97);
       border: 1px solid rgba(70, 60, 54, 0.10);
@@ -91,29 +100,29 @@
       box-shadow: 0 10px 24px rgba(40, 30, 20, 0.12);
       overflow: hidden;
     }
-
+  
     .search-suggestion-item {
       padding: 9px 11px;
       cursor: pointer;
       border-bottom: 1px solid rgba(70, 60, 54, 0.06);
       background: transparent;
     }
-
+  
     .search-suggestion-item:last-child {
       border-bottom: none;
     }
-
+  
     .search-suggestion-item:hover {
       background: rgba(255,255,255,0.82);
     }
-
+  
     .search-suggestion-main {
       font-size: 11px;
       font-weight: 500;
       color: #1f2328;
       line-height: 1.3;
     }
-
+  
     .search-suggestion-sub {
       font-size: 10px;
       color: rgba(31, 35, 40, 0.55);
@@ -176,6 +185,22 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 8px;
+    }
+  
+    .slider-left {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+  
+    .slider-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  
+    .slider-divider {
+      color: rgba(255,255,255,0.35);
     }
   
     .slider-label {
@@ -249,8 +274,23 @@
       border: 1px solid rgba(255,255,255,0.75);
     }
   
-    .legend-dot.on-campus  { background: #6f8fb8; }
-    .legend-dot.off-campus { background: #b87a6f; }
+    .legend-dot.on-campus {
+      background: #6f8fb8;
+    }
+  
+    .legend-dot.off-campus {
+      background: #b87a6f;
+    }
+  
+    .bottom-row {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+  
+    .bottom-row .btn {
+      margin-left: auto;
+    }
   
     .count-line {
       font-family: "DM Mono", monospace;
@@ -267,7 +307,7 @@
       box-shadow: 0 12px 28px rgba(40, 30, 20, 0.16) !important;
       font-family: "DM Sans", sans-serif !important;
       color: #1f2328 !important;
-      min-width: 260px;
+      min-width: 280px;
       max-width: 300px;
       overflow: hidden;
     }
@@ -327,6 +367,10 @@
       border-radius: 8px;
       border: 1px solid rgba(70, 60, 54, 0.07);
     }
+
+    .popup-notes {
+      margin-top: 12px; 
+    }
   
     .rating-item {
       display: flex;
@@ -370,10 +414,49 @@
       border: 1px solid rgba(184,122,111,0.22);
     }
   
-    /* attribution */
     .maplibregl-ctrl-attrib {
       font-size: 10px !important;
       color: rgba(31, 35, 40, 0.5) !important;
+    }
+
+    .help-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .help-modal.hidden {
+      display: none;
+    }
+
+    .help-box {
+      background: rgba(250, 248, 244, 0.97);
+      border: 1px solid rgba(70, 60, 54, 0.10);
+      border-radius: 14px;
+      padding: 18px 20px;
+      width: 300px;
+      box-shadow: 0 12px 28px rgba(40, 30, 20, 0.18);
+    }
+
+    .help-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .help-row {
+      font-size: 11px;
+      margin-bottom: 6px;
+      color: rgba(31,35,40,0.7);
+    }
+
+    .help-close {
+      margin-top: 12px;
+      width: 100%;
     }
   </style>
 </head>
@@ -381,39 +464,55 @@
 <body>
   <div id="map"></div>
 
+  <div id="helpModal" class="help-modal hidden">
+    <div class="help-box">
+      <div class="popup-name">How to use this site</div>
+      <div class="popup-row">• Use this site to find locations and times to see Golden Gate Henge (GGH).</div>
+      <div class="popup-row">• Drag the slider to change the date.</div>
+      <div class="popup-row">• The gold band shows valid areas to view GGH on a given date.</div>
+      <div class="popup-row">• Red and blue pins show selected viewing locations off- and on-campus.</div>
+      <div class="popup-row">• Click any pin to get more details, including sunset time, GGH dates, and ratings.</div>
+      <div class="popup-row">• Click anywhere on the map to drop a pin and get sunset time.</div>
+      <div class="popup-row">• Use the search bar to search for pins, addresses, or coordinates, then hit Enter.</div>
+      <div class="popup-row">• Click "Filter by Date" to see only valid pins for a given date.</div>
+      <div class="popup-row">• Click "Today" to go to today's date.</div>
+      <div class="popup-row">• Click "Reset" to reset the search and map filters.</div>
+      <button id="closeHelp" class="btn help-close">Close</button>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="panel-header">
       <span class="panel-title">GGH Locations </span>
-      <span class="panel-subtitle">Click pins for more details.</span>
+      <span class="panel-subtitle" id="helpText">
+        Click here for help using this site
+      </span>
     </div>
-
-    <!-- search -->
+  
     <div class="search-row">
       <input id="search" type="search" placeholder="Search by pin name, address, or coordinates" />
-      <button class ="btn" id="resetBtn">Reset</button>
+      <button class="btn" id="resetBtn">Reset</button>
     </div>
     <div id="searchSuggestions" class="search-suggestions"></div>
-
-    <!-- day slider -->
+  
     <div class="slider-section">
       <div class="slider-header">
-        <div style="display:flex; align-items:baseline; gap:10px;">
+        <div class="slider-left">
           <span class="slider-label">
             Day <span id="dayNum">1</span>
           </span>
-          <span style="color:rgba(255,255,255,0.35);">/</span>
+          <span class="slider-divider">/</span>
           <span class="slider-date" id="dateDisplay">
             Jan 01
           </span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div class="slider-right">
           <button class="btn" id="todayBtn">Today</button>
         </div>
       </div>
       <input id="daySlider" type="range" min="1" max="365" step="1" value="1" />
     </div>
-
-    <!-- legend -->
+  
     <div class="legend">
       <div class="legend-item">
         <div class="legend-dot on-campus"></div>
@@ -424,11 +523,12 @@
         <span>Off-Campus</span>
       </div>
     </div>
-
-    <div style="display:flex; align-items:center; margin-top:10px;">
+  
+    <div class="bottom-row">
       <div class="count-line" id="countLine"></div>
-      <button class="btn" id="showAllBtn" style="margin-left:auto;">Filter by Date</button>
+      <button class="btn" id="showAllBtn">Filter by Date</button>
     </div>
+  </div>
   <script>
     /* ============================================================
        Section 1 — PINS LIST
@@ -448,36 +548,35 @@
           notes: string
        ============================================================ */
       const PINS = [
-        { name: "Albany Bulb", photo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/20221009_123157_HDR.jpg", lat: 37.8888190128995, lng: -122.327415343957, gghStartSp: 346, gghEndSp: 365, gghStartFa: 346, gghEndFa: 365, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Indian Rock Park", lat: 37.8922186297827, lng: -122.273079038403, gghStartSp: 23, gghEndSp: 26, gghStartFa: 320, gghEndFa: 322, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Grotto Rock Park", lat: 37.8934271576909, lng: -122.268772249069, gghStartSp: 23, gghEndSp: 26, gghStartFa: 319, gghEndFa: 322, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Seaview Trail Vista", lat: 37.8941055046049, lng: -122.234256937359, gghStartSp: 32, gghEndSp: 34, gghStartFa: 312, gghEndFa: 313, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Cesar Chavez Park (north end)", lat: 37.874363168464, lng: -122.324623478546, gghStartSp: 22, gghEndSp: 26, gghStartFa: 320, gghEndFa: 324, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Cesar Chavez Park (south end)", lat: 37.8696703920424, lng: -122.320255234011, gghStartSp: 29, gghEndSp: 33, gghStartFa: 313, gghEndFa: 316, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Bayview Pl", lat: 37.8843472745503, lng: -122.262806137463, gghStartSp: 33, gghEndSp: 35, gghStartFa: 311, gghEndFa: 313, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Atlas Path Vista", lat: 37.8868405145148, lng: -122.25041512177, gghStartSp: 34, gghEndSp: 35, gghStartFa: 310, gghEndFa: 312, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Berkeley Bay Vista", lat: 37.8804262480801, lng: -122.247626549108, gghStartSp: 39, gghEndSp: 40, gghStartFa: 305, gghEndFa: 307, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Lawrence Hall of Science", lat: 37.878412, lng: -122.247044, gghStartSp: 40, gghEndSp: 42, gghStartFa: 303, gghEndFa: 305, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Grizzly Peak (main pullout)", lat: 37.8812286530182, lng: -122.231515513766, gghStartSp: 41, gghEndSp: 42, gghStartFa: 303, gghEndFa: 304, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Big C", lat: 37.8745311105514, lng: -122.249589757626, gghStartSp: 42, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Brickyard Cove (Berkeley Marina)", lat: 37.8598142764415, lng: -122.305735651139, gghStartSp: 43, gghEndSp: 46, gghStartFa: 300, gghEndFa: 302, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
+        { name: "Albany Bulb", photo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/20221009_123157_HDR.jpg", lat: 37.8888190128995, lng: -122.327415343957, gghStartSp: 346, gghEndSp: 365, gghStartFa: 346, gghEndFa: 365, tag: "Off-Campus", access: 4, views: 5, env: 5, notes: "" },
+        { name: "Indian Rock Park", lat: 37.8922186297827, lng: -122.273079038403, gghStartSp: 23, gghEndSp: 26, gghStartFa: 320, gghEndFa: 322, tag: "Off-Campus", access: 4, views: 5, env: 3, notes: "" },
+        { name: "Grotto Rock Park", lat: 37.8934271576909, lng: -122.268772249069, gghStartSp: 23, gghEndSp: 26, gghStartFa: 319, gghEndFa: 322, tag: "Off-Campus", access: 4, views: 5, env: 4, notes: "" },
+        { name: "Seaview Trail Vista", lat: 37.8941055046049, lng: -122.234256937359, gghStartSp: 32, gghEndSp: 34, gghStartFa: 312, gghEndFa: 313, tag: "Off-Campus", access: 3, views: 5, env: 5, notes: "" },
+        { name: "Cesar Chavez Park (north end)", lat: 37.874363168464, lng: -122.324623478546, gghStartSp: 22, gghEndSp: 26, gghStartFa: 320, gghEndFa: 324, tag: "Off-Campus", access: 3, views: 5, env: 5, notes: "" },
+        { name: "Cesar Chavez Park (south end)", lat: 37.8696703920424, lng: -122.320255234011, gghStartSp: 29, gghEndSp: 33, gghStartFa: 313, gghEndFa: 316, tag: "Off-Campus", access: 4, views: 5, env: 4, notes: "" },
+        { name: "Bayview Pl", lat: 37.8843472745503, lng: -122.262806137463, gghStartSp: 33, gghEndSp: 35, gghStartFa: 311, gghEndFa: 313, tag: "Off-Campus", access: 3, views: 2, env: 4, notes: "" },
+        { name: "Atlas Path Vista", lat: 37.8868405145148, lng: -122.25041512177, gghStartSp: 34, gghEndSp: 35, gghStartFa: 310, gghEndFa: 312, tag: "Off-Campus", access: 4, views: 5, env: 3, notes: "" },
+        { name: "Berkeley Bay Vista", lat: 37.8804262480801, lng: -122.247626549108, gghStartSp: 39, gghEndSp: 40, gghStartFa: 305, gghEndFa: 307, tag: "Off-Campus", access: 4, views: 5, env: 3, notes: "" },
+        { name: "Lawrence Hall of Science", lat: 37.878412, lng: -122.247044, gghStartSp: 40, gghEndSp: 42, gghStartFa: 303, gghEndFa: 305, tag: "Off-Campus", access: 4, views: 5, env: 4, notes: "Though admission is free for UC Berkeley students, the Lawrence Hall of Science closes at 5pm, which is before sunset." },
+        { name: "Grizzly Peak (main pullout)", lat: 37.8812286530182, lng: -122.231515513766, gghStartSp: 41, gghEndSp: 42, gghStartFa: 303, gghEndFa: 304, tag: "Off-Campus", access: 4, views: 5, env: 4, notes: "" },
+        { name: "Big C", lat: 37.8745311105514, lng: -122.249589757626, gghStartSp: 42, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "Off-Campus", access: 4, views: 5, env: 5, notes: "" },
+        { name: "Brickyard Cove (Berkeley Marina)", lat: 37.8598142764415, lng: -122.305735651139, gghStartSp: 43, gghEndSp: 46, gghStartFa: 300, gghEndFa: 302, tag: "Off-Campus", access: 3, views: 5, env: 5, notes: "" },
         { name: "Picnic View Ridge", lat: 37.871545273863, lng: -122.22968464953, gghStartSp: 47, gghEndSp: 49, gghStartFa: 296, gghEndFa: 298, tag: "Off-Campus", access: 3, views: 5, env: 5, notes: "" },
-        { name: "Grizzly Peak (giant log pullout)", lat: 37.8722073897154, lng: -122.220588331848, gghStartSp: 48, gghEndSp: 49, gghStartFa: 296, gghEndFa: 297, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Clark Kerr Track", lat: 37.8647545004258, lng: -122.24647976126, gghStartSp: 49, gghEndSp: 51, gghStartFa: 294, gghEndFa: 296, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Stonewall-Panoramic Trail Vista", lat: 37.8655644745048, lng: -122.240581102592, gghStartSp: 50, gghEndSp: 51, gghStartFa: 294, gghEndFa: 296, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Grizzly Peak (KPFA Tower pullout)", lat: 37.8651820930087, lng: -122.222135855337, gghStartSp: 52, gghEndSp: 53, gghStartFa: 292, gghEndFa: 293, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Point Emery", photo: "https://www.emeryville.org/files/assets/city/v/1/community-services/images/parks/point-emery.png?dimension=pageimage&w=480",lat: 37.8457293526268, lng: -122.302198015687, gghStartSp: 56, gghEndSp: 58, gghStartFa: 287, gghEndFa: 289, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Emeryville Marina Park", photo: "https://www.emeryville.org/files/assets/city/v/2/community-services/images/parks/marina-park.jpeg?dimension=pageimage&w=480", lat: 37.8424286024585, lng: -122.314367444065, gghStartSp: 57, gghEndSp: 59, gghStartFa: 285, gghEndFa: 288, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Mt Diablo Summit Visitor Center", lat: 37.8818042559832, lng: -121.914290020331, gghStartSp: 63, gghEndSp: 63, gghStartFa: 282, gghEndFa: 282, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Treasure Island NW", lat: 37.8303856995793, lng: -122.377617269266, gghStartSp: 61, gghEndSp: 65, gghStartFa: 279, gghEndFa: 284, tag: "Off-Campus", access: 2, views: 5, env: 5, notes: "$8.50 toll is collected heading westbound on the Bay Bridge to Treasure Island." },
-        { name: "Alcatraz Viewpoint (Baker Beach)", lat: 37.8268929527263, lng: -122.424130452215, gghStartSp: 55, gghEndSp: 64, gghStartFa: 281, gghEndFa: 290, tag: "Off-Campus", access: 1, views: 5, env: 5, notes: "The Alcatraz ferry is the only authorized way to reach the island. Adult tickets sell for roughly $45-60 and can sell out 90 days in advance." },
-        { name: "Joaquin Miller Park (Lookout Point)", lat: 37.8128316018722, lng: -122.194258955209, gghStartSp: 81, gghEndSp: 82, gghStartFa: 262, gghEndFa: 263, tag: "Off-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Evans Hall F10 Balcony", lat: 37.8734336917814, lng: -122.258000827204, gghStartSp: 42, gghEndSp: 43, gghStartFa: 302, gghEndFa: 304, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Graduate Theological Union Balcony", lat: 37.8754152586105, lng: -122.262049887252, gghStartSp: 39, gghEndSp: 41, gghStartFa: 304, gghEndFa: 306, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Ridge Path", lat: 37.8764686028796, lng: -122.263984471867, gghStartSp: 38, gghEndSp: 40, gghStartFa: 305, gghEndFa: 307, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Cal Memorial Stadium Concourse", lat: 37.8704318904843, lng: -122.251501483844, gghStartSp: 45, gghEndSp: 46, gghStartFa: 299, gghEndFa: 300, tag: "On-Campus", access: 2, views: 5, env: 4, notes: "" },
-        { name: "Top of Campanile", lat: 37.8720578106133, lng: -122.25787494319, gghStartSp: 43, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "On-Campus", access: 5, views: 5, env: 5, notes: "" },
-        { name: "Tan Kee Hall 775 Balcony", lat: 37.8730803891031, lng: -122.256571043642, gghStartSp: 42, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "On-Campus", access: 3, views: 3, env: 5, notes: "" }
+        { name: "Grizzly Peak (giant log pullout)", lat: 37.8722073897154, lng: -122.220588331848, gghStartSp: 48, gghEndSp: 49, gghStartFa: 296, gghEndFa: 297, tag: "Off-Campus", access: 4, views: 5, env: 5, notes: "" },
+        { name: "Clark Kerr Track", lat: 37.8647545004258, lng: -122.24647976126, gghStartSp: 49, gghEndSp: 51, gghStartFa: 294, gghEndFa: 296, tag: "On-Campus", access: 5, views: 3, env: 4, notes: "" },
+        { name: "Stonewall-Panoramic Trail Vista", lat: 37.8655644745048, lng: -122.240581102592, gghStartSp: 50, gghEndSp: 51, gghStartFa: 294, gghEndFa: 296, tag: "Off-Campus", access: 4, views: 5, env: 5, notes: "" },
+        { name: "Grizzly Peak (KPFA Tower pullout)", lat: 37.8651820930087, lng: -122.222135855337, gghStartSp: 52, gghEndSp: 53, gghStartFa: 292, gghEndFa: 293, tag: "Off-Campus", access: 4, views: 5, env: 5, notes: "" },
+        { name: "Point Emery", photo: "https://www.emeryville.org/files/assets/city/v/1/community-services/images/parks/point-emery.png?dimension=pageimage&w=480",lat: 37.8457293526268, lng: -122.302198015687, gghStartSp: 56, gghEndSp: 58, gghStartFa: 287, gghEndFa: 289, tag: "Off-Campus", access: 4, views: 5, env: 3, notes: "" },
+        { name: "Emeryville Marina Park", photo: "https://www.emeryville.org/files/assets/city/v/2/community-services/images/parks/marina-park.jpeg?dimension=pageimage&w=480", lat: 37.8424286024585, lng: -122.314367444065, gghStartSp: 57, gghEndSp: 59, gghStartFa: 285, gghEndFa: 288, tag: "Off-Campus", access: 4, views: 5, env: 5, notes: "" },
+        { name: "Mt Diablo Summit Visitor Center", lat: 37.8818042559832, lng: -121.914290020331, gghStartSp: 63, gghEndSp: 63, gghStartFa: 282, gghEndFa: 282, tag: "Off-Campus", access: 3, views: 4, env: 5, notes: "Due to the distance from the Golden Gate Bridge, very clear visiblilty is required to see it from Mt. Diablo." },
+        { name: "Treasure Island NW", lat: 37.8303856995793, lng: -122.377617269266, gghStartSp: 61, gghEndSp: 65, gghStartFa: 279, gghEndFa: 284, tag: "Off-Campus", access: 2, views: 5, env: 4, notes: "$8.50 toll is collected heading westbound on the Bay Bridge to Treasure Island." },
+        { name: "Alcatraz Viewpoint (Barker Beach)", lat: 37.8268929527263, lng: -122.424130452215, gghStartSp: 55, gghEndSp: 64, gghStartFa: 281, gghEndFa: 290, tag: "Off-Campus", access: 1, views: 5, env: 4, notes: "The Alcatraz ferry is the only authorized way to reach the island. Adult tickets sell for roughly $45-60 and can sell out 90 days in advance." },
+        { name: "Joaquin Miller Park (Lookout Point)", lat: 37.8128316018722, lng: -122.194258955209, gghStartSp: 81, gghEndSp: 82, gghStartFa: 262, gghEndFa: 263, tag: "Off-Campus", access: 3, views: 5, env: 5, notes: "" },
+        { name: "Evans Hall F10 Balcony", lat: 37.8734336917814, lng: -122.258000827204, gghStartSp: 42, gghEndSp: 43, gghStartFa: 302, gghEndFa: 304, tag: "On-Campus", access: 4, views: 3, env: 1, notes: "Access to the balcony is blocked off, but the sunset can be viewed from inside the building." },
+        { name: "Graduate Theological Union Balcony", lat: 37.8754152586105, lng: -122.262049887252, gghStartSp: 39, gghEndSp: 41, gghStartFa: 304, gghEndFa: 306, tag: "On-Campus", access: 4, views: 3, env: 3, notes: "" },
+        { name: "Ridge Path", lat: 37.8764686028796, lng: -122.263984471867, gghStartSp: 38, gghEndSp: 40, gghStartFa: 305, gghEndFa: 307, tag: "On-Campus", access: 5, views: 2, env: 4, notes: "" },
+        { name: "Cal Memorial Stadium Concourse", lat: 37.8704318904843, lng: -122.251501483844, gghStartSp: 45, gghEndSp: 46, gghStartFa: 299, gghEndFa: 300, tag: "On-Campus", access: 2, views: 5, env: 4, notes: "Entry to the stadium is prohibited except on game days." },
+        { name: "Top of Campanile", lat: 37.8720578106133, lng: -122.25787494319, gghStartSp: 43, gghEndSp: 44, gghStartFa: 301, gghEndFa: 303, tag: "On-Campus", access: 1, views: 5, env: 5, notes: "Access to the top closes at 5pm on weekdays and 5:30pm on weekends, which is before sunset." },
       ];
 
     /* ============================================================
@@ -513,6 +612,7 @@
       let clickedPopup = null;
       let clickedLngLat = null;
       let suppressClickedPopupClose = false;
+      let clickedPinCameFromSearch = false;
 
       let selectedPinPopup = null;
       let selectedPinLngLat = null;
@@ -557,6 +657,7 @@
               access: pin.access,
               views: pin.views,
               env: pin.env,
+              weighted: getWeightedRating(pin.access, pin.views, pin.env),
               notes: pin.notes || ""
             }
           }))
@@ -566,6 +667,10 @@
       function ratingDots(score, max = 5) {
         const filled = Math.round(score);
         return "●".repeat(filled) + "○".repeat(max - filled);
+      }
+
+      function getWeightedRating(access, views, env) {
+        return (1.3 * views + 1.1 * env + 0.6 * access) / 3
       }
 
       function buildPopupHtml(props) {
@@ -597,7 +702,10 @@
           : "";
 
         const notesHtml = props.notes
-          ? `<div class="popup-row" style="margin-top:6px">${props.notes}</div>`
+          ? `<div class="popup-row popup-notes">
+              <strong>Notes:</strong><br>
+              ${props.notes}
+            </div>`
           : "";
 
         return `
@@ -620,6 +728,10 @@
               <div class="rating-item">
                 <span class="rating-label">Environment</span>
                 <span class="rating-stars" style="color:#5dd68c;">${ratingDots(props.env)}</span>
+              </div>
+              <div class="rating-item">
+                <span class="rating-label">Overall</span>
+                <span class="rating-stars" style="color:#d6644d;">${ratingDots(props.weighted)}</span>
               </div>
             </div>
             <span class="popup-tag ${tagClass}">${props.tag}</span>
@@ -798,6 +910,7 @@
             const lng = e.lngLat.lng;
             const lat = e.lngLat.lat;
             clickedLngLat = { lng, lat };
+            clickedPinCameFromSearch = false;
             updateClickedSunsetPopup();
           });
         });
@@ -817,6 +930,7 @@
       let suggestionItems = [];
       let addressSuggestTimer = null;
       let latestSuggestToken = 0;
+      let searchPinnedResult = null;
 
       function clearSuggestions() {
         suggestionItems = [];
@@ -851,8 +965,15 @@
       function getPinSuggestions(query) {
         const q = query.trim().toLowerCase();
         if (!q) return [];
+        const day = Number(daySlider.value);
         return PINS
-          .filter(pin => pin.name.toLowerCase().includes(q))
+          .filter(pin => {
+            const matchesName = pin.name.toLowerCase().includes(q);
+            const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
+            const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
+            const matchesDay = showAll ? true : (matchesSpring || matchesFall);
+            return matchesName && matchesDay;
+          })
           .slice(0, 5)
           .map(pin => ({
             main: pin.name,
@@ -895,6 +1016,7 @@
               essential: true
             });
             clickedLngLat = { lng, lat };
+            clickedPinCameFromSearch = true;
             updateClickedSunsetPopup();
           }
         }));
@@ -998,6 +1120,31 @@
         const pinMatches = getPinsMatchingQuery(query);
         if (pinMatches.length > 0) {
           const pin = pinMatches[0];
+          const day = Number(daySlider.value);
+          const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
+          const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
+          const matchesDay = showAll ? true : (matchesSpring || matchesFall);
+          if (!matchesDay) {
+            searchPinnedResult = null;
+            if (selectedPinPopup) {
+              suppressSelectedPinClose = true;
+              selectedPinPopup.remove();
+              suppressSelectedPinClose = false;
+              selectedPinPopup = null;
+            }
+            selectedPinLngLat = null;
+            selectedPinProps = null;
+            const source = map.getSource("pins");
+            if (source) source.setData(buildGeoJSON([]));
+            countLine.textContent = "No valid pin found for the selected date";
+            return;
+          }
+          searchPinnedResult = pin;
+          map.flyTo({
+            center: [pin.lng, pin.lat],
+            zoom: Math.max(map.getZoom(), 14),
+            essential: true
+          });
           selectedPinLngLat = { lng: pin.lng, lat: pin.lat };
           selectedPinProps = { ...pin };
           if (selectedPinPopup) {
@@ -1005,17 +1152,21 @@
             selectedPinPopup.remove();
             suppressSelectedPinClose = false;
           }
+          applyFilters();
           selectedPinPopup = new maplibregl.Popup({ offset: 16, maxWidth: "280px" })
             .setLngLat([pin.lng, pin.lat])
             .setHTML(buildPopupHtml(pin))
             .addTo(map);
-          selectedPinPopup.on("close", () => {
-            if (suppressSelectedPinClose) return;
-            selectedPinPopup = null;
-            selectedPinLngLat = null;
-            selectedPinProps = null;
-          });
-
+            selectedPinPopup.on("close", () => {
+              if (suppressSelectedPinClose) return;
+              selectedPinPopup = null;
+              selectedPinLngLat = null;
+              selectedPinProps = null;
+              searchPinnedResult = null;
+              searchInput.value = "";
+              clearSuggestions();
+              applyFilters();
+            });
           return;
         }
 
@@ -1028,6 +1179,7 @@
             essential: true
           });
           clickedLngLat = { lng: coords.lng, lat: coords.lat };
+          clickedPinCameFromSearch = true;
           updateClickedSunsetPopup();
           return;
         }
@@ -1044,6 +1196,7 @@
               essential: true
             });
             clickedLngLat = { lng, lat };
+            clickedPinCameFromSearch = true;
             updateClickedSunsetPopup();
             return;
           }
@@ -1056,9 +1209,11 @@
 
       function resetState() {
         searchInput.value = "";
+        searchPinnedResult = null;
         showAll = true;
         showAllBtn.textContent = "Filter by Date";
         clickedLngLat = null;
+        clickedPinCameFromSearch = false;
         const clickedSource = map.getSource("clicked-point");
         if (clickedSource) {
           clickedSource.setData({
@@ -1067,9 +1222,19 @@
           });
         }
         if (clickedPopup) {
+          suppressClickedPopupClose = true;
           clickedPopup.remove();
+          suppressClickedPopupClose = false;
           clickedPopup = null;
         }
+        if (selectedPinPopup) {
+          suppressSelectedPinClose = true;
+          selectedPinPopup.remove();
+          suppressSelectedPinClose = false;
+          selectedPinPopup = null;
+        }
+        selectedPinLngLat = null;
+        selectedPinProps = null;
         clearSuggestions();
         applyFilters();
       }
@@ -1077,15 +1242,37 @@
       function applyFilters() {
         const query = searchInput.value.trim().toLowerCase();
         const day = Number(daySlider.value);
-        const visible = PINS.filter(pin => {
-          const matchesSearch =
-            query === "" ||
-            pin.name.toLowerCase().includes(query);
+        let visible;
+        if (searchPinnedResult) {
+          const pin = searchPinnedResult;
           const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
           const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
           const matchesDay = showAll ? true : (matchesSpring || matchesFall);
-          return matchesSearch && matchesDay;
-        });
+          visible = matchesDay ? [pin] : [];
+        } else {
+          visible = PINS.filter(pin => {
+            const matchesSearch =
+              query === "" ||
+              pin.name.toLowerCase().includes(query);
+            const matchesSpring = day >= pin.gghStartSp && day <= pin.gghEndSp;
+            const matchesFall = day >= pin.gghStartFa && day <= pin.gghEndFa;
+            const matchesDay = showAll ? true : (matchesSpring || matchesFall);
+            return matchesSearch && matchesDay;
+          });
+        }
+        if (searchPinnedResult) {
+          const stillVisible = visible.length > 0;
+          if (!stillVisible && selectedPinPopup) {
+            suppressSelectedPinClose = true;
+            selectedPinPopup.remove();
+            suppressSelectedPinClose = false;
+            selectedPinPopup = null;
+            selectedPinLngLat = null;
+            selectedPinProps = null;
+            searchPinnedResult = null;
+            searchInput.value = "";
+          }
+        }
         const source = map.getSource("pins");
         if (source) source.setData(buildGeoJSON(visible));
         const n = visible.length;
@@ -1093,6 +1280,7 @@
       }
 
       searchInput.addEventListener("input", () => {
+        searchPinnedResult = null;
         applyFilters();
         updateSuggestions();
       });
@@ -1102,6 +1290,18 @@
           e.preventDefault();
           clearSuggestions();
           runSearch();
+        }
+      });
+
+      searchInput.addEventListener("focus", () => {
+        if (searchInput.value.trim()) {
+          updateSuggestions();
+        }
+      });
+
+      searchInput.addEventListener("click", () => {
+        if (searchInput.value.trim()) {
+          updateSuggestions();
         }
       });
 
@@ -1130,18 +1330,18 @@
       const todayBtn = document.getElementById("todayBtn");
 
       const TIMEZONE = "America/Los_Angeles";
-      const SLIDER_YEAR = 2026; // hard-set to 2026 for now
+      let currentYear = new Date().getFullYear();
 
       function isLeapYear(year) {
         return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
       }
-      const MAX_DOY = isLeapYear(SLIDER_YEAR) ? 366 : 365;
+      const MAX_DOY = isLeapYear(currentYear) ? 366 : 365;
       daySlider.max = String(MAX_DOY);
 
       // convert doy to formatted PST date
-      function doyToDateStr(doy, year = SLIDER_YEAR) {
+      function doyToDateStr(doy, year = currentYear) {
         // 01/01 in PST
-        const d = new Date(SLIDER_YEAR, 0, 1);
+        const d = new Date(currentYear, 0, 1);
         d.setDate(Number(doy));
         return d.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
       }
@@ -1149,7 +1349,7 @@
       // get today's PST doy
       function getTodayDOY() {
         const now = new Date();
-        const start = new Date(SLIDER_YEAR, 0, 1);
+        const start = new Date(currentYear, 0, 1);
         return Math.floor((now - start) / 86400000) + 1;
       }
 
@@ -1165,6 +1365,9 @@
             regionSource.setData(buildBoundaryFillGeoJSON(v));
           }
           applyFilters();
+          if (document.activeElement === searchInput && searchInput.value.trim()) {
+            updateSuggestions();
+          }
           updateClickedSunsetPopup();
           updateSelectedPinPopup();
         }
@@ -1220,7 +1423,7 @@
         return Math.abs(signedAngleDiff(a, b));
       }
 
-      function sunsetUTC(dayNum, year = SLIDER_YEAR, lat, lng) {
+      function sunsetUTC(dayNum, year = currentYear, lat, lng) {
         const PI = Math.PI;
         const zen = 90.833;
         const gA = 18;
@@ -1291,7 +1494,7 @@
         return new Date(d.getTime() + smB * 60000);
       }
 
-      function sunsetLocalTime(dayNum, lat, lng, year = SLIDER_YEAR) {
+      function sunsetLocalTime(dayNum, lat, lng, year = currentYear) {
         const sunset = sunsetUTC(dayNum, year, lat, lng);
         return sunset.toLocaleTimeString("en-US", {
           timeZone: "America/Los_Angeles",
@@ -1302,7 +1505,7 @@
         });
       }
 
-      function dayFrac(dayNum, lat, lng, year = SLIDER_YEAR) {
+      function dayFrac(dayNum, lat, lng, year = currentYear) {
         const sunset = sunsetUTC(dayNum, year, lat, lng);
         const startOfYear = new Date(Date.UTC(year, 0, 1));
         return (sunset - startOfYear) / 86400000 + 1;
@@ -1320,7 +1523,7 @@
         );
       }
 
-      function sunsetAzimuth(dayFraction, lat, year = SLIDER_YEAR) {
+      function sunsetAzimuth(dayFraction, lat, year = currentYear) {
         const daysThisYear = isLeapYear(year) ? 366 : 365;
         const declDeg = sunsetDeclination(dayFraction, daysThisYear);
         const val = Math.sin(degToRad(declDeg)) / Math.cos(degToRad(lat));
@@ -1353,8 +1556,8 @@
 
       // residual = 0 exactly on the requested boundary
       function boundaryResidual(dayNum, lat, lng, side) {
-        const dayFraction = dayFrac(dayNum, lat, lng, SLIDER_YEAR);
-        const sunAz = sunsetAzimuth(dayFraction, lat, SLIDER_YEAR);
+        const dayFraction = dayFrac(dayNum, lat, lng, currentYear);
+        const sunAz = sunsetAzimuth(dayFraction, lat, currentYear);
         const bounds = getBridgeBounds(lng, lat);
 
         if (side === "upper") {
@@ -1495,7 +1698,7 @@
         if (!clickedLngLat) return;
         const { lng, lat } = clickedLngLat;
         const day = Number(daySlider.value);
-        const sunsetStr = sunsetLocalTime(day, lat, lng, SLIDER_YEAR);
+        const sunsetStr = sunsetLocalTime(day, lat, lng, currentYear);
 
         if (clickedPopup) {
           suppressClickedPopupClose = true;
@@ -1531,10 +1734,25 @@
           `)
           .addTo(map);
 
-        clickedPopup.on("close", () => {
-          if (suppressClickedPopupClose) return;
-          resetState();
-        });
+          clickedPopup.on("close", () => {
+            if (suppressClickedPopupClose) return;
+            const shouldClearSearch = clickedPinCameFromSearch;
+            clickedPopup = null;
+            clickedLngLat = null;
+            clickedPinCameFromSearch = false;
+            const clickedSource = map.getSource("clicked-point");
+            if (clickedSource) {
+              clickedSource.setData({
+                type: "FeatureCollection",
+                features: []
+              });
+            }
+            if (shouldClearSearch) {
+              searchInput.value = "";
+              clearSuggestions();
+            }
+            applyFilters();
+          });
       }
 
       function updateSelectedPinPopup() {
@@ -1555,6 +1773,26 @@
           selectedPinProps = null;
         });
       }
+
+    /* ============================================================
+        Section 8 — HELP POPUP
+        ============================================================ */
+        const helpModal = document.getElementById("helpModal");
+        const closeHelp = document.getElementById("closeHelp");
+
+        helpText.addEventListener("click", () => {
+          helpModal.classList.remove("hidden");
+        });
+
+        closeHelp.addEventListener("click", () => {
+          helpModal.classList.add("hidden");
+        });
+
+        helpModal.addEventListener("click", (e) => {
+          if (e.target === helpModal) {
+            helpModal.classList.add("hidden");
+          }
+        });
   </script>
 </body>
 </html>
