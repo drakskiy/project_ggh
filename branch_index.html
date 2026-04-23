@@ -828,6 +828,9 @@
         const currentDay = Number(daySlider.value);
         const todaySunset = sunsetLocalTime(currentDay, Number(props.lat), Number(props.lng));
 
+        const overallRating =
+          props.weighted ?? getWeightedRating(Number(props.access), Number(props.views), Number(props.env));
+
         const dateHtml = samePeriod
           ? `<div class="popup-row"><strong>GGH Dates:</strong> ${springLine}</div>`
           : `<div class="popup-row"><strong>Spring Dates:</strong> ${springLine}</div>
@@ -867,7 +870,7 @@
               </div>
               <div class="rating-item">
                 <span class="rating-label">Overall</span>
-                <span class="rating-stars" style="color:#d6644d;">${ratingDots(props.weighted)}</span>
+                <span class="rating-stars" style="color:#d6644d;">${ratingDots(overallRating)}</span>
               </div>
             </div>
             <span class="popup-tag ${tagClass}">${props.tag}</span>
