@@ -381,7 +381,7 @@
   
     .rating-label {
       font-family: "DM Mono", monospace;
-      font-size: 10px;
+      font-size: 10.5px;
       color: rgba(31, 35, 40, 0.50);
       letter-spacing: 0.03em;
     }
@@ -390,6 +390,23 @@
       font-size: 15px;
       letter-spacing: 2px;
       line-height: 1;
+    }
+
+    .rating-stars {
+      display: flex;
+      gap: 4px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      display: inline-block;
+    }
+
+    .dot.filled {
+      background: currentColor;
     }
   
     .popup-tag {
@@ -586,21 +603,21 @@
       }
 
       .panel {
-        top: 12px;
-        left: 12px;
-        right: 12px;
+        top: 10px;
+        left: 10px;
+        right: 10px;
         width: auto;
-        max-height: 48vh;
-        overflow-y: auto;
-        padding: 14px 12px;
-        border-radius: 14px;
+        padding: 10px 10px 8px;
+        border-radius: 12px;
+        max-height: 40vh; 
+        overflow-y: auto; 
       }
 
       .panel-header {
         gap: 8px;
         flex-wrap: wrap;
-        margin-bottom: 10px;
-        padding-bottom: 10px;
+        margin-bottom: 6px;
+        padding-bottom: 6px;
       }
 
       .panel-title {
@@ -608,55 +625,79 @@
       }
 
       .panel-subtitle {
-        font-size: 10px;
+        display: none;
       }
 
       .search-row {
         display: grid;
         grid-template-columns: 1fr auto;
+        gap: 6px;
+        margin-bottom: 8px;
       }
 
       input[type="search"] {
-        min-width: 0;
         font-size: 11px;
+        min-width: 0;
+      }
+
+      .btn {
+        font-size: 10px;
+        padding: 7px 9px;
+      }
+
+      .slider-section {
+        margin-bottom: 8px;
       }
 
       .slider-header {
         display: grid;
         grid-template-columns: 1fr auto;
-        gap: 8px;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+
+      .slider-label {
+        font-size: 11px;
+      }
+
+      .slider-date {
+        font-size: 12px;
+      }
+
+      input[type="range"] {
+        height: 2px;
       }
 
       .legend {
-        gap: 14px;
+        margin-bottom: 6px;
+        padding: 6px;
+        gap: 10px;
+        font-size: 10px;
         flex-wrap: wrap;
+      }
+
+      .legend-dot {
+        width: 8px;
+        height: 8px;
       }
 
       .bottom-row {
         display: grid;
         grid-template-columns: 1fr auto;
-        gap: 8px;
+        gap: 6px;
+        margin-top: 6px;
       }
 
       .bottom-row .btn {
         margin-left: 0;
       }
 
+      .count-line {
+        font-size: 9px;
+      }
+
       .pin-menu-wrap {
-        left: 12px;
-        right: 12px;
-        bottom: 22px;
-        top: auto;
-        width: auto;
-      }
-
-      .pin-menu-list {
-        max-height: 185px;
-        overflow-y: auto;
-      }
-
-      .pin-menu-box {
-        max-height: 240px;
+        display: none !important;
       }
 
       .maplibregl-popup-content {
@@ -664,12 +705,18 @@
         max-width: 260px;
       }
 
-      .maplibregl-ctrl-bottom-right {
-        display: none;
+      .popup-photo {
+        height: 110px;
       }
 
-      .pin-menu-wrap {
-        display: none !important;
+      .help-box {
+        width: calc(100vw - 32px);
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .maplibregl-ctrl-bottom-right {
+        display: none;
       }
     }
   </style>
@@ -812,10 +859,10 @@
     /* ============================================================
        Section 2 — MAP SETTINGS
        ============================================================ */
-      const MAPTILER_STYLE = "https://api.maptiler.com/maps/voyager-v2/style.json?key=cv2lryclk9tg1QR6KCLy";
-      const MAP_CENTER = [-122.2730, 37.8715];
       const IS_MOBILE = window.innerWidth <= 700;
-      const START_ZOOM = IS_MOBILE ? 10.2 : 11.4;
+      const MAPTILER_STYLE = "https://api.maptiler.com/maps/voyager-v2/style.json?key=cv2lryclk9tg1QR6KCLy";
+      const MAP_CENTER = IS_MOBILE ? [-122.2730, 37.89277]: [-122.2730, 37.8715];
+      const START_ZOOM = IS_MOBILE ? 10.6 : 11.4;
 
       const MAPTILER_KEY = "cv2lryclk9tg1QR6KCLy";
       const GEOCODE_BASE = "https://api.maptiler.com/geocoding";
@@ -897,7 +944,11 @@
 
       function ratingDots(score, max = 5) {
         const filled = Math.round(score);
-        return "●".repeat(filled) + "○".repeat(max - filled);
+        let html = "";
+        for (let i = 0; i < max; i++) {
+          html += `<span class="dot ${i < filled ? "filled" : ""}"></span>`;
+        }
+        return html;
       }
 
       function getWeightedRating(access, views, env) {
